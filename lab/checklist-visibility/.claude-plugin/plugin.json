@@ -1,0 +1,8 @@
+{
+  "name": "checklist-visibility",
+  "version": "0.1.0",
+  "description": "Intervention: auto-create TaskCreate checklists for multi-step tasks to prevent step-skipping (Gawande 2009; Hales & Pronovost 2006)",
+  "author": {
+    "name": "Che Cheng"
+  }
+}
