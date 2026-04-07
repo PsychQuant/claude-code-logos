@@ -1,0 +1,11 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-code-logos",
+  "description": "Science-backed plugins that make Claude Code work better — grounded in cognitive science, behavioral economics, and software engineering research",
+  "owner": {
+    "name": "Che Cheng",
+    "email": "che@psychquant.com"
+  },
+  "homepage": "https://github.com/PsychQuant/claude-code-logos",
+  "plugins": []
+}
