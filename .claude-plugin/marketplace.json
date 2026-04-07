@@ -7,5 +7,16 @@
     "email": "che@psychquant.com"
   },
   "homepage": "https://github.com/PsychQuant/claude-code-logos",
-  "plugins": []
+  "plugins": [
+    {
+      "name": "skill-best-practices",
+      "version": "0.1.0",
+      "description": "Evidence-based practices for writing better Claude Code skills — 6 practices from cognitive science with before/after examples",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": "./plugins/skill-best-practices",
+      "category": "development"
+    }
+  ]
 }

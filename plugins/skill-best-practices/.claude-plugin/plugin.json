@@ -1,0 +1,8 @@
+{
+  "name": "skill-best-practices",
+  "version": "0.1.0",
+  "description": "Evidence-based practices for writing better Claude Code skills — each practice cites published research and includes before/after examples",
+  "author": {
+    "name": "Che Cheng"
+  }
+}
