@@ -24,17 +24,36 @@ Each practice below is grounded in published research. When auditing or writing 
 
 **How to apply**:
 
-Add this to any skill with 3+ steps:
+Skill 裡直接提供**固定的 task 清單表格**，Claude 只需要照抄建立，不需要自己決定要建什麼。
+
+**技術限制**（來自 Claude Code 源碼驗證）：
+- `TaskCreate` 是 Claude Code 的內部工具（`buildTool` 註冊），**不是 shell 命令**
+- Skill 的 `!`command`` shell injection **無法呼叫 TaskCreate**，只能跑 shell 命令
+- 因此 task 清單只能透過**自然語言指示** Claude 建立，不能自動執行
+- 但 shell injection 可以**掃描素材**（`ls`、`find`），讓 Claude 看到具體檔案再決定哪些 task 要建、哪些要跳過
+
+**最佳做法**：shell injection 掃描 + 固定 task 表格
 
 ```markdown
-## Before Starting
-
-Create a TaskCreate checklist with ALL steps before executing any of them.
-Each step must be a separate task. Mark each task in_progress before starting
-and completed when done. Do not batch multiple steps into one task.
+## 素材掃描（自動執行）
+```!
+echo "SRT:"; find lectures/ -name "*.srt" 2>/dev/null || echo "  (無)"
+echo "MD:"; find lectures/ -name "*.md" 2>/dev/null || echo "  (無)"
 ```
 
-**Before (bad)**:
+## 建立 Checklist
+根據掃描結果，用 TaskCreate 工具建立以下 task（一次全部建完）。
+沒有素材的步驟直接標 completed（附註「無素材」）。
+
+| # | subject（直接複製） | 類型 | 跳過條件 |
+|---|-------------------|------|---------|
+| 1 | SRT 基礎校正 | 機械 | 沒有 .srt |
+| 2 | ⚠️ 讀逐字稿，充實講義內容 | **創意** | **不可跳過** |
+| 3 | 講義結構自檢 | 驗證 | 不可跳過 |
+| 4 | HTML build | 機械 | 沒有 .srt |
+```
+
+**Before (bad)** — 讓 Claude 自己決定建什麼：
 ```markdown
 ## Steps
 1. Read the SRT file
@@ -44,21 +63,20 @@ and completed when done. Do not batch multiple steps into one task.
 5. Update index
 ```
 
-**After (good)**:
+**After (good)** — skill 直接給出表格，Claude 照建：
 ```markdown
-## Before Starting
-Create a TaskCreate checklist from the steps below. Each step = one task.
-
-## Steps
-1. Read the SRT file
-2. Correct misheard words (phase 1)
-3. **Read full transcript and enrich lecture content** (creative step — takes the most time)
-4. Correct SRT using lecture terms (phase 2)
-5. Build HTML
-6. Update index
+| # | subject（直接複製到 TaskCreate） | 類型 |
+|---|--------------------------------|------|
+| 1 | SRT 基礎校正（Speaker + 誤聽詞庫） | 機械 |
+| 2 | **⚠️ 讀逐字稿全文，充實講義內容** | **創意** |
+| 3 | 講義結構自檢 | 驗證 |
+| 4 | HTML build + 影片連結 | 機械 |
 ```
 
-**Key insight**: The creative step (3) must be its own task with a clear, specific name. Vague task names like "process content" get glossed over.
+**三個關鍵原則**：
+1. **Skill 給清單，不是 Claude 自己建** — 減少 Claude 的判斷空間，降低遺漏
+2. **用表格格式** — subject 欄直接複製，比自然語言段落更不容易被改寫
+3. **標注類型（機械/創意/驗證）** — 讓 Claude 知道哪些步驟需要放慢
 
 ---
 

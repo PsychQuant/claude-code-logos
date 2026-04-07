@@ -11,6 +11,14 @@ When starting any task with 3 or more steps, you MUST create a TaskCreate checkl
    - Good: "Read full transcript and add missing teaching points to lecture"
 4. **Mark in_progress before starting, completed when done.** Do not skip status updates.
 5. **Never mark a task completed if you skipped it or did it partially.**
+6. **If a skill provides a task table, use it verbatim.** Do not rephrase or merge the provided tasks.
+
+## Technical Notes
+
+- `TaskCreate` is a Claude Code internal tool (registered via `buildTool`), NOT a shell command
+- Skills' `!`command`` shell injection CANNOT call TaskCreate — it can only run shell commands
+- Shell injection CAN scan for files (`ls`, `find`) to provide context for which tasks to create vs skip
+- Best pattern in skills: shell injection scans materials → fixed task table with skip conditions → Claude creates tasks from table
 
 ## Why
 
