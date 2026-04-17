@@ -44,6 +44,19 @@ claude-code-logos/
 | 5 | `self-check` | 完成前驗證清單 | Reason (1990) | 待建 |
 | 6 | `salient-labeling` | 關鍵步驟的醒目標記 | Tversky & Kahneman (1981); Mayer (2009) | 待建 |
 
+## 公開 plugin 的具體 template
+
+`skill-best-practices` 是六個 practice 的合集，其中 **Practice #1 Checklist visibility** 不只給抽象原則，也提供具體的 **Step 0 Bootstrap Stage Task List template**：
+
+- 格式：YAML frontmatter 後、第一個執行步驟前，放一段 `TaskCreate(name=..., description=...)` × N，每個 phase 一個 task
+- 寫法：必須含「**為什麼強制**」段落說明此 skill 特定的 silent failure 風險
+- 實證：已在 `issue-driven-dev` (11 skills)、`plugin-tools` v1.12.0 (6 skills)、`mcp-tools` v1.14.0 (13 skills) 共 60+ skill 驗證
+
+這是 rule #3「concrete examples over abstract rules」的自我應用——抽象的 checklist 原則本身也要有具體 template，否則 skill 作者各寫各的 checklist 格式，擴散效果被稀釋。
+
+更新記錄：
+- `skill-writing.md` 加入 Step 0 template（[commit `e75eae7`](https://github.com/PsychQuant/claude-code-logos/commit/e75eae7)）
+
 ## 開發規範
 
 - 每個 lab plugin 只做**一件事**（一個 rule），這樣才能隔離變項
