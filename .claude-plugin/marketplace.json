@@ -10,8 +10,8 @@
   "plugins": [
     {
       "name": "skill-best-practices",
-      "version": "0.1.0",
-      "description": "Evidence-based practices for writing better Claude Code skills — 6 practices from cognitive science with before/after examples",
+      "version": "0.2.0",
+      "description": "Evidence-based practices for writing better Claude Code skills — 7 practices from cognitive science with before/after examples, plus hooks that deliver the rules at runtime",
       "author": {
         "name": "Che Cheng"
       },

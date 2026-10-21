@@ -7,7 +7,7 @@ Science-backed plugins that make Claude Code work better.
 ```
 claude-code-logos/
 ├── plugins/                    ← 公開 plugin（在 marketplace.json 裡）
-│   └── skill-best-practices/   ← 全部 6 個 practice，日常使用
+│   └── skill-best-practices/   ← 全部 7 個 practice，日常使用（skill ＋ hooks）
 ├── lab/                        ← 實驗用 plugin（不在 marketplace.json 裡）
 │   ├── checklist-visibility/   ← 介入 1：TaskCreate 清單
 │   ├── separate-phases/        ← 介入 2：機械/創意分離（待建）
@@ -24,7 +24,9 @@ claude-code-logos/
 
 ## 實驗設計
 
-每個 `lab/` 下的 plugin 是**一個獨立的介入（intervention）**，只包含一個 rule。
+每個 `lab/` 下的 plugin 是**一個獨立的介入（intervention）**。
+
+> ⚠️ **plugin 的 `rules/` 不會被載入**（2026-10-21 查證，見 #1）。plugin 能提供的元件類型裡沒有 `rules/`，plugin 根目錄的 `CLAUDE.md` 也不會被載入（[plugins reference](https://code.claude.com/docs/en/plugins-reference.md)，"Standard layout"）。所以只含 `rules/` 的 lab plugin，用 `--plugin-dir` 載入後，模型收到的內容與 baseline 相同。**在此之前用 rule-only 的 lab plugin 跑出的 treatment 結果，量到的不是介入效果，不能當處理組數據。** 介入要經會載入的元件送達：`SessionStart`／`PreToolUse` hook 的 `additionalContext`，或 skill。`skill-best-practices` 0.2.0 的 `hooks/` 是可參考的寫法。
 
 實驗流程：
 1. **Baseline**：不裝任何 lab plugin，正常使用 Claude Code 完成任務
@@ -46,7 +48,7 @@ claude-code-logos/
 
 ## 公開 plugin 的具體 template
 
-`skill-best-practices` 是六個 practice 的合集，其中 **Practice #1 Checklist visibility** 不只給抽象原則，也提供具體的 **Step 0 Bootstrap Stage Task List template**：
+`skill-best-practices` 是七個 practice 的合集，其中 **Practice #1 Checklist visibility** 不只給抽象原則，也提供具體的 **Step 0 Bootstrap Stage Task List template**：
 
 - 格式：YAML frontmatter 後、第一個執行步驟前，放一段 `TaskCreate(name=..., description=...)` × N，每個 phase 一個 task
 - 寫法：必須含「**為什麼強制**」段落說明此 skill 特定的 silent failure 風險
@@ -59,6 +61,8 @@ claude-code-logos/
 
 ## 開發規範
 
-- 每個 lab plugin 只做**一件事**（一個 rule），這樣才能隔離變項
-- rule 檔案裡必須包含 `## Why` section 說明研究根據
+- 每個 lab plugin 只做**一件事**（一個介入），這樣才能隔離變項
+- 介入必須經會載入的元件送達（hook 或 skill）；只放 `rules/` 等於沒有介入（見上方〈實驗設計〉的警語）
+- 介入的文字裡必須包含 `## Why` section 說明研究根據
+- hook 腳本要有測試：以合成的 hook JSON 餵 stdin，檢查 stdout
 - 公開的 `skill-best-practices` 是全部 practice 的合集，更新時要同步

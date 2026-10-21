@@ -1,4 +1,6 @@
-# Skill Writing Best Practices (Auto-loaded Rule)
+# Skill Writing Best Practices
+
+Delivered by the plugin's `PreToolUse` hook on `Write|Edit` when the target is a `SKILL.md` (once per session). Plugins have no `rules/` component, so this file is never loaded on its own; `scripts/skill_writing_reminder.py` reads it and adds it as context.
 
 When writing or modifying skills (SKILL.md files), apply these evidence-based principles:
 
@@ -25,3 +27,4 @@ When writing or modifying skills (SKILL.md files), apply these evidence-based pr
    放在 YAML frontmatter 後、第一個執行步驟前。未提供 "為什麼" 段落的 skill 會被降級——使用者不知道為什麼要遵守就會跳過。
 2. **Separate mechanical from creative**: Don't mix rule-based steps (file operations, builds) with judgment-heavy steps (content creation, analysis) in the same phase. Label creative steps with ⚠️ and explicit importance markers.
 3. **Concrete examples over abstract rules**: Include at least one before/after example for any non-obvious instruction. Use tables instead of prose for task lists — tables are less likely to be rewritten by Claude.
+4. **Search locates, reading decides** (Practice 7): any step that checks something against a source must name the reading action — which file and which section to `Read` — not only a search. Truncated search output (`| head`, `| tail`, `grep -m N`) is never evidence that a source lacks something. When the claim is that a source *decided* or *confirmed* something, the step reads that source's conclusions section in full. Before concluding absence, try other wordings and read the surrounding section.

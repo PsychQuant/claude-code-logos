@@ -1,0 +1,35 @@
+{
+  "description": "Deliver skill-best-practices at runtime: the Practice 7 rule at session start, a reminder on truncated searches, and the skill-writing rule when a SKILL.md is edited. None of these hooks blocks a tool call.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/session_start.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/search_truncation_reminder.py\""
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/skill_writing_reminder.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
