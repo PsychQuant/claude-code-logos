@@ -7,9 +7,10 @@ Science-backed plugins that make Claude Code work better.
 ```
 claude-code-logos/
 ├── plugins/                    ← 公開 plugin（在 marketplace.json 裡）
-│   └── skill-best-practices/   ← 全部 7 個 practice，日常使用（skill ＋ hooks）
+│   └── skill-best-practices/   ← 全部 8 個 practice，日常使用（skill ＋ hooks）
 ├── lab/                        ← 實驗用 plugin（不在 marketplace.json 裡）
 │   ├── checklist-visibility/   ← 介入 1：TaskCreate 清單
+│   ├── interruption-cost/      ← 介入 8：只在答案會改變下一步時提問（SessionStart hook）
 │   ├── separate-phases/        ← 介入 2：機械/創意分離（待建）
 │   └── ...                     ← 其他介入（待建）
 └── docs/                       ← 研究筆記、實驗設計、數據
@@ -45,10 +46,11 @@ claude-code-logos/
 | 4 | `concrete-examples` | 用範例代替抽象規則 | LeFevre & Dixon (1986); Chi et al. (1989) | 待建 |
 | 5 | `self-check` | 完成前驗證清單 | Reason (1990) | 待建 |
 | 6 | `salient-labeling` | 關鍵步驟的醒目標記 | Tversky & Kahneman (1981); Mayer (2009) | 待建 |
+| 8 | `interruption-cost` | 只在答案會改變下一步時提問，不可逆的動作一次確認 | Horvitz (1999); Mark et al. (2008); Ancker et al. (2017) | ✅ 可測試（SessionStart hook；量測與流程見該目錄 README） |
 
 ## 公開 plugin 的具體 template
 
-`skill-best-practices` 是七個 practice 的合集，其中 **Practice #1 Checklist visibility** 不只給抽象原則，也提供具體的 **Step 0 Bootstrap Stage Task List template**：
+`skill-best-practices` 是八個 practice 的合集，其中 **Practice #1 Checklist visibility** 不只給抽象原則，也提供具體的 **Step 0 Bootstrap Stage Task List template**：
 
 - 格式：YAML frontmatter 後、第一個執行步驟前，放一段 `TaskCreate(name=..., description=...)` × N，每個 phase 一個 task
 - 寫法：必須含「**為什麼強制**」段落說明此 skill 特定的 silent failure 風險
