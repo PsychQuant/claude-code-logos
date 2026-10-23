@@ -115,6 +115,26 @@ class SessionStartRule(unittest.TestCase):
         self.assertIn("Search locates, reading decides", text)
         self.assertIn("truncated", text)
 
+    def context(self, source="startup"):
+        code, out, err = run("session_start.py", {"hook_event_name": "SessionStart", "source": source})
+        self.assertEqual(code, 0, err)
+        return json.loads(out)["hookSpecificOutput"]["additionalContext"]
+
+    def test_injects_practice_8_rule(self):
+        text = self.context()
+        self.assertIn("Ask only when the answer changes the next step", text)
+        self.assertIn("Practice 8", text)
+
+    def test_practice_8_keeps_irreversible_actions_confirmed(self):
+        text = self.context()
+        self.assertIn("Irreversible or private actions still need confirmation", text)
+        self.assertIn("do not ask again", text)
+
+    def test_both_rules_restored_after_compaction(self):
+        text = self.context("compact")
+        self.assertIn("Search locates, reading decides", text)
+        self.assertIn("Ask only when the answer changes the next step", text)
+
 
 class SkillWritingReminder(unittest.TestCase):
     SCRIPT = "skill_writing_reminder.py"
