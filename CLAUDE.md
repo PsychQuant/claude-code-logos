@@ -40,13 +40,13 @@ claude-code-logos/
 
 | # | Plugin | Practice | 研究來源 | 狀態 |
 |---|--------|----------|---------|------|
-| 1 | `checklist-visibility` | TaskCreate 清單防止跳步 | Gawande (2009); Hales & Pronovost (2006) | ✅ 可測試 |
+| 1 | `checklist-visibility` | TaskCreate 清單防止跳步 | Gawande (2009); Hales & Pronovost (2006) | ⚠ 只有 `rules/`，載入後送不到模型；改成 hook 前不能當處理組（#5） |
 | 2 | `separate-phases` | 機械/創意步驟分離 | Sweller (1988); Monsell (2003) | 待建 |
 | 3 | `implementation-intentions` | 具體的 if-then 指示 | Gollwitzer (1999) | 待建 |
 | 4 | `concrete-examples` | 用範例代替抽象規則 | LeFevre & Dixon (1986); Chi et al. (1989) | 待建 |
 | 5 | `self-check` | 完成前驗證清單 | Reason (1990) | 待建 |
 | 6 | `salient-labeling` | 關鍵步驟的醒目標記 | Tversky & Kahneman (1981); Mayer (2009) | 待建 |
-| 8 | `interruption-cost` | 只在答案會改變下一步時提問，不可逆的動作一次確認 | Horvitz (1999); Mark et al. (2008); Ancker et al. (2017) | ✅ 可測試（SessionStart hook；量測與流程見該目錄 README） |
+| 8 | `interruption-cost` | 只在答案會改變下一步時提問，不可逆的動作一次確認 | Horvitz (1999); Mark et al. (2008); Altmann & Trafton (2002); Ancker et al. (2017) | ✅ 可測試（SessionStart hook；量測與流程見該目錄 README） |
 
 ## 公開 plugin 的具體 template
 
