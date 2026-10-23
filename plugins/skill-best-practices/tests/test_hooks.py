@@ -128,10 +128,30 @@ class SessionStartRule(unittest.TestCase):
     def test_practice_8_keeps_irreversible_actions_confirmed(self):
         text = self.context()
         self.assertIn("Irreversible or private actions still need confirmation", text)
-        self.assertIn("do not ask again", text)
+        self.assertIn("Do not ask again about an item the user approved", text)
 
     def test_practice_8_asks_in_one_message(self):
         self.assertIn("in one message, not over several turns", self.context())
+
+    def test_practice_8_when_unsure_treat_as_irreversible(self):
+        self.assertIn("When unsure, treat the action as irreversible", self.context())
+
+    def test_practice_8_routine_records_are_a_closed_list(self):
+        text = self.context()
+        self.assertIn("only these four, never extended by similarity", text)
+        self.assertIn("goes back to confirmation", text)
+        self.assertIn("local paths", text)
+
+    def test_practice_8_approval_covers_only_listed_items(self):
+        text = self.context()
+        self.assertIn("One approval covers only the items listed in the message it answers", text)
+        self.assertIn("An earlier answer is never approval for an irreversible action it did not list", text)
+
+    def test_practice_8_explicit_instructions_to_ask_still_apply(self):
+        self.assertIn(
+            "An explicit instruction from the user, their CLAUDE.md or a skill to ask, confirm or wait still applies",
+            self.context(),
+        )
 
     def test_both_rules_restored_after_compaction(self):
         text = self.context("compact")

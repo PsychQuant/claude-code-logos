@@ -5,6 +5,7 @@ does, and checks what the script prints. Run with:
 
     python3 -m unittest discover -s lab/interruption-cost/tests
 """
+import importlib.util
 import json
 import pathlib
 import subprocess
@@ -12,6 +13,13 @@ import unittest
 
 PLUGIN = pathlib.Path(__file__).resolve().parents[1]
 SCRIPTS = PLUGIN / "scripts"
+
+
+def load(path):
+    spec = importlib.util.spec_from_file_location(f"mod_{abs(hash(str(path)))}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def run(script, stdin):
@@ -54,6 +62,21 @@ class SessionStartIntervention(unittest.TestCase):
         code, out, err = run("session_start.py", "not json")
         self.assertEqual(code, 0, err)
         self.assertIn("additionalContext", out)
+
+    def test_rule_lines_match_the_shipped_plugin(self):
+        # The lab must test the rule users get. Every rule line of the plugin's
+        # Practice 8 appears in the lab text, word for word.
+        shipped = load(PLUGIN.parents[1] / "plugins" / "skill-best-practices" / "scripts" / "session_start.py").PRACTICE_8
+        lab = self.output()["additionalContext"]
+        lines = [l for l in shipped.splitlines() if l.startswith("- ")]
+        self.assertGreater(len(lines), 3)
+        for line in lines:
+            self.assertIn(line, lab)
+
+    def test_why_section_states_measured_outcomes_only(self):
+        text = self.output()["additionalContext"]
+        self.assertNotIn("lose their signal", text)
+        self.assertIn("analogy", text)
 
 
 class Manifest(unittest.TestCase):
