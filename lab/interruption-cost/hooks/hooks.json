@@ -1,0 +1,15 @@
+{
+  "description": "interruption-cost intervention: inject the Practice 8 rule, with its research basis, at every session start. The hook never blocks a tool call.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/session_start.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
