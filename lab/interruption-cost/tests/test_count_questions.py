@@ -38,6 +38,20 @@ def tool_result():
     }
 
 
+def queued(prompt, kind="human"):
+    # A message sent while the agent was working: Claude Code records it as an
+    # attachment, not a user entry (shape taken from real transcripts).
+    attachment = {"type": "queued_command", "prompt": prompt, "origin": {"kind": kind}}
+    if kind == "human":
+        attachment["humanTurn"] = True
+    return {"type": "attachment", "attachment": attachment}
+
+
+def notification():
+    return {"type": "user", "origin": {"kind": "task-notification"},
+            "message": {"role": "user", "content": "<task-notification>done</task-notification>"}}
+
+
 class Measure(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -120,12 +134,13 @@ class Measure(unittest.TestCase):
         ])
         self.assertEqual((m["human_turns"], m["replies"], m["question_replies"]), (2, 1, 0))
 
-    def test_meta_compact_and_notifications_are_not_human_turns(self):
+    def test_meta_and_compact_entries_are_not_human_turns(self):
+        # Task notifications are not ignored: they end a reply (see
+        # test_notification_ends_a_reply_without_answering_it).
         m = self.measure([
             human("go"),
             assistant(text("Waiting for the agent?")),
             {"type": "user", "isMeta": True, "message": {"role": "user", "content": "skill text"}},
-            {"type": "user", "origin": {"kind": "task-notification"}, "message": {"role": "user", "content": "<task-notification>done</task-notification>"}},
             {"type": "user", "isCompactSummary": True, "message": {"role": "user", "content": "This session is being continued"}},
             assistant(text("Done.")),
             human("thanks"),
@@ -187,6 +202,67 @@ class Measure(unittest.TestCase):
     def test_tasks_must_be_positive(self):
         code, out, err = self.cli(self.write([human("go")]), "--tasks", 0)
         self.assertEqual(code, 2)
+
+    # Verify round 1 (#4): defects found by the reviewers, one reproduction each.
+
+    def test_image_only_human_reply_answers_the_question(self):
+        image = {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": "AA=="}}
+        m = self.measure([human("help"), assistant(text("Can you send a screenshot?")), human([image]),
+                          assistant(text("Found it."))])
+        self.assertEqual((m["human_turns"], m["question_replies"]), (2, 1))
+
+    def test_queued_message_is_a_human_turn(self):
+        m = self.measure([human("ship it"), assistant(text("Push A?")), queued("yes"),
+                          assistant(text("Push B too?")), human("yes")])
+        self.assertEqual((m["human_turns"], m["question_replies"], m["consecutive_asks"]), (3, 2, 1))
+
+    def test_notification_ends_a_reply_without_answering_it(self):
+        for boundary in (notification(), queued("<task-notification>done</task-notification>", kind="task-notification")):
+            m = self.measure([human("go"), assistant(text("Push A and B?")), boundary,
+                              assistant(text("Job finished. Waiting on your push decision.")), human("yes")])
+            self.assertEqual((m["human_turns"], m["replies"], m["question_replies"]), (2, 2, 1))
+
+    def test_new_instruction_after_an_answered_ask_tool_is_not_consecutive(self):
+        work = {"type": "tool_use", "id": "toolu_bash", "name": "Bash", "input": {"command": "ls"}}
+        m = self.measure([human("go"), assistant(ask_tool()), tool_result(), assistant(work), tool_result(),
+                          human("next task"), assistant(text("Which file?")), human("a.txt")])
+        self.assertEqual((m["questions"], m["consecutive_asks"]), (2, 0))
+
+    def test_duplicate_human_entry_keeps_the_consecutive_ask(self):
+        m = self.measure([human("ship it"), assistant(text("Push A?")), human("yes"), queued("yes"),
+                          assistant(text("Push B too?")), human("yes")])
+        self.assertEqual(m["consecutive_asks"], 1)
+
+    def test_ask_tool_questions_are_counted_separately(self):
+        call = {"type": "tool_use", "id": "toolu_ask", "name": "AskUserQuestion",
+                "input": {"questions": [{"question": "a"}, {"question": "b"}, {"question": "c"}]}}
+        m = self.measure([human("go"), assistant(call), tool_result(), assistant(text("Done."))])
+        self.assertEqual((m["ask_tool_calls"], m["ask_tool_questions"]), (1, 3))
+
+    def test_message_that_is_not_an_object_is_skipped(self):
+        m = self.measure([human("go"), {"type": "assistant", "message": "oops"}, assistant(text("Push?")), human("yes")])
+        self.assertEqual((m["skipped_lines"], m["question_replies"]), (1, 1))
+
+    def test_deeply_nested_line_is_skipped(self):
+        m = self.measure([human("go"), assistant(text("Push?")), human("yes")], raw_lines=["[" * 100000])
+        self.assertEqual((m["skipped_lines"], m["question_replies"]), (1, 1))
+
+    def test_question_mark_variants_count(self):
+        for reply in ("What?!", "Push now?(yes/no)", "Which one?:", "Push now?。", "要推嗎?還是不要"):
+            m = self.measure([human("go"), assistant(text(reply)), human("ok")])
+            self.assertEqual(m["question_replies"], 1, reply)
+
+    def test_tilde_and_long_fences_are_code(self):
+        for reply in ("~~~\nwhy?\n~~~\nDone.", "````markdown\n```\nwhy?\n```\n````\nDone."):
+            m = self.measure([human("go"), assistant(text(reply)), human("ok")])
+            self.assertEqual(m["question_replies"], 0, reply)
+
+    def test_summary_names_the_file_without_its_directory(self):
+        path = self.write([human("go"), assistant(text("Push?")), human("yes")])
+        code, out, err = self.cli(path)
+        self.assertEqual(code, 0, err)
+        self.assertIn(path.name, out)
+        self.assertNotIn(str(path.parent), out)
 
 
 if __name__ == "__main__":
