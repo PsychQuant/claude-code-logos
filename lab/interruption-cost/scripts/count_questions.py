@@ -46,9 +46,9 @@ import re
 import sys
 
 NOT_TYPED_PREFIXES = ("<local-command-", "<task-notification>", "[Request interrupted", "<system-reminder>")
-FENCE = re.compile(r"^\s{0,3}(`{3,}|~{3,})")
+FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 INLINE_CODE = re.compile(r"`[^`\n]*`")
-ASCII_QUESTION = re.compile(r"\?(?![A-Za-z0-9=&%#/._~+-])")
+ASCII_QUESTION = re.compile(r"\?(?![A-Za-z0-9=&%#/+])")
 
 
 def blocks(entry):
@@ -75,7 +75,11 @@ def classify(entry):
         kind = origin.get("kind") if isinstance(origin, dict) else None
         if kind == "human" or (kind is None and attachment.get("humanTurn")):
             return "human"
-        return "boundary" if kind == "task-notification" else None
+        prompt = attachment.get("prompt")
+        if (kind == "task-notification" or attachment.get("commandMode") == "task-notification"
+                or (isinstance(prompt, str) and prompt.startswith("<task-notification>"))):
+            return "boundary"
+        return None
     if entry.get("type") != "user" or entry.get("isMeta") or entry.get("isCompactSummary"):
         return None
     content = blocks(entry)
@@ -88,7 +92,7 @@ def classify(entry):
         return "boundary" if origin.get("kind") == "task-notification" else None
     text = "".join(block_text(b) for b in content if b.get("type") == "text").strip()
     if not text:
-        return "human" if content else None
+        return "human" if any(b.get("type") != "text" for b in content) else None
     if text.startswith("<task-notification>"):
         return "boundary"
     return None if text.startswith(NOT_TYPED_PREFIXES) else "human"
@@ -129,16 +133,24 @@ def measure(lines):
         "questions": 0,
         "consecutive_asks": 0,
         "consecutive_ask_lines": [],
+        "reasks_after_typed_answer": 0,
+        "reask_after_typed_answer_lines": [],
         "skipped_lines": 0,
     }
-    # last: None, "ask_open" (asked, not answered yet), "ask_answered" or "statement".
+    # last: None, "ask_open" (asked, not answered yet), "answered_tool" (an
+    # AskUserQuestion the person answered), "answered_typed" (a question the
+    # person answered by typing) or "statement".
     # activity: whether the assistant did anything since the last human turn.
-    state = {"pending": None, "last": None, "activity": False}
+    # text_open: whether the next text block continues the pending reply.
+    state = {"pending": None, "last": None, "activity": False, "text_open": False}
 
     def record_ask(line_no):
-        if state["last"] == "ask_answered":
+        if state["last"] in ("answered_tool", "answered_typed"):
             counts["consecutive_asks"] += 1
             counts["consecutive_ask_lines"].append(line_no)
+            if state["last"] == "answered_typed":
+                counts["reasks_after_typed_answer"] += 1
+                counts["reask_after_typed_answer_lines"].append(line_no)
         state["last"] = "ask_open"
 
     def close_reply():
@@ -146,6 +158,7 @@ def measure(lines):
             return False
         line_no, text = state["pending"]
         state["pending"] = None
+        state["text_open"] = False
         counts["replies"] += 1
         if is_question(text):
             counts["question_replies"] += 1
@@ -174,22 +187,34 @@ def measure(lines):
                 if block.get("type") == "tool_use" and block.get("name") == "AskUserQuestion":
                     counts["ask_tool_calls"] += 1
                     counts["ask_tool_questions"] += ask_tool_question_count(block)
+                    if state["pending"] is not None and not is_question(state["pending"][1]):
+                        state["last"] = "statement"  # a statement since the last answer breaks the chain
                     state["pending"] = None  # text before the call introduced this question
+                    state["text_open"] = False
                     record_ask(line_no)
-                    state["last"] = "ask_answered"  # the tool returns once the person has answered
+                    state["last"] = "answered_tool"  # the tool returns once the person has answered
+                elif block.get("type") == "tool_use":
+                    state["text_open"] = False  # text before a tool call is narration, not the reply
                 elif block.get("type") == "text" and block_text(block).strip():
-                    state["pending"] = (line_no, block_text(block))
+                    if state["text_open"] and state["pending"] is not None:
+                        state["pending"] = (line_no, state["pending"][1] + "\n" + block_text(block))
+                    else:
+                        state["pending"] = (line_no, block_text(block))
+                    state["text_open"] = True
             continue
+        if entry.get("type") == "user":
+            state["text_open"] = False  # a tool result, a local command or a meta entry breaks the reply
         kind = classify(entry)
         if kind == "boundary":
             close_reply()  # the agent stopped here, but nobody answered
         elif kind == "human":
             counts["human_turns"] += 1
             if state["activity"]:
-                if not close_reply():
+                close_reply()
+                if state["last"] == "ask_open":
+                    state["last"] = "answered_typed"  # also when a notification already closed the reply
+                elif state["last"] != "statement":
                     state["last"] = None  # the turn ended without a reply: this is a new instruction
-                elif state["last"] == "ask_open":
-                    state["last"] = "ask_answered"
             # no assistant activity since the last human turn: a repeated or follow-up message, state unchanged
             state["activity"] = False
     close_reply()
@@ -208,6 +233,7 @@ def summary(path, result):
         f"AskUserQuestion:     {result['ask_tool_calls']} ({result['ask_tool_questions']} questions)",
         f"questions (asks):    {result['questions']}",
         f"consecutive asks:    {result['consecutive_asks']} (lines: {', '.join(map(str, lines)) or '-'})",
+        f"  after a typed answer: {result['reasks_after_typed_answer']} (lines: {', '.join(map(str, result['reask_after_typed_answer_lines'])) or '-'})",
         f"tasks:               {result['tasks'] if result['tasks'] is not None else '- (pass --tasks N)'}",
         f"questions per task:  {f'{per_task:.2f}' if per_task is not None else '-'}",
         f"skipped lines:       {result['skipped_lines']}",

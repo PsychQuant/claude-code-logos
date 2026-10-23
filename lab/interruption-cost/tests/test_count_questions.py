@@ -257,6 +257,52 @@ class Measure(unittest.TestCase):
             m = self.measure([human("go"), assistant(text(reply)), human("ok")])
             self.assertEqual(m["question_replies"], 0, reply)
 
+    # Verify round 2 (#4).
+
+    def test_question_followed_by_a_second_text_block_still_counts(self):
+        m = self.measure([human("ship it"), assistant(text("Push now?"), text("I will wait for your approval.")), human("yes")])
+        self.assertEqual(m["question_replies"], 1)
+        m = self.measure([human("ship it"), assistant(text("Push now?")), assistant(text("I will wait.")), human("yes")])
+        self.assertEqual(m["question_replies"], 1)
+
+    def test_answer_after_a_notification_keeps_the_ask_answered(self):
+        m = self.measure([human("ship it"), assistant(text("Push A?")), notification(), human("yes"),
+                          assistant(text("Push B too?")), human("yes")])
+        self.assertEqual(m["consecutive_asks"], 1)
+
+    def test_queued_notification_without_origin_is_a_boundary(self):
+        legacy = {"type": "attachment", "attachment": {"type": "queued_command", "commandMode": "task-notification",
+                                                      "prompt": "<task-notification>done</task-notification>"}}
+        m = self.measure([human("go"), assistant(text("Push A and B?")), legacy,
+                          assistant(text("Job finished. Waiting on your push decision.")), human("yes")])
+        self.assertEqual((m["human_turns"], m["replies"], m["question_replies"]), (2, 2, 1))
+
+    def test_queued_human_turn_without_origin(self):
+        legacy = {"type": "attachment", "attachment": {"type": "queued_command", "prompt": "yes", "humanTurn": True}}
+        m = self.measure([human("go"), assistant(text("Push?")), legacy])
+        self.assertEqual((m["human_turns"], m["question_replies"]), (2, 1))
+
+    def test_blank_entry_without_origin_is_not_a_human_turn(self):
+        m = self.measure([human("go"), assistant(text("Push?")),
+                          {"type": "user", "message": {"role": "user", "content": [text("   ")]}}])
+        self.assertEqual(m["human_turns"], 1)
+
+    def test_indented_fence_is_code(self):
+        reply = "Steps:\n1. Run\n    ```bash\n    x = a ? b : c\n    ```\nDone."
+        m = self.measure([human("go"), assistant(text(reply)), human("ok")])
+        self.assertEqual(m["question_replies"], 0)
+
+    def test_italic_and_trailing_dots_questions_count(self):
+        for reply in ("_Ready to push?_", "Ready?...", "~~Push?~~ Done", "*Ready?*"):
+            m = self.measure([human("go"), assistant(text(reply)), human("ok")])
+            self.assertEqual(m["question_replies"], 1, reply)
+
+    def test_reasks_after_a_typed_answer_are_separated_from_ask_tool_chains(self):
+        m = self.measure([human("go"), assistant(ask_tool()), tool_result(), assistant(text("Also push?")), human("yes"),
+                          assistant(text("And tag it?")), human("yes")])
+        self.assertEqual((m["consecutive_asks"], m["reasks_after_typed_answer"]), (2, 1))
+        self.assertEqual(m["reask_after_typed_answer_lines"], [6])
+
     def test_summary_names_the_file_without_its_directory(self):
         path = self.write([human("go"), assistant(text("Push?")), human("yes")])
         code, out, err = self.cli(path)
