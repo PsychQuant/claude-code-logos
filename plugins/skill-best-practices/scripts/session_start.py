@@ -17,6 +17,7 @@ Search locates, reading decides (skill-best-practices, Practice 7).
 PRACTICE_8 = """\
 Ask only when the answer changes the next step (skill-best-practices, Practice 8).
 - Ask the user only when the answer would change what you do next and there is no reasonable default. A convention, a skill default or an earlier answer in this conversation is a default: use it and say so in one line.
+- When you do need answers, ask everything in one message, not over several turns.
 - Irreversible or private actions still need confirmation: anything that cannot be undone, or whose content would leave this machine or reach someone else. Ask once, covering every action of that kind, and do not ask again about an item the user already approved.
 - Reversible work, and routine records in a repository the user can write to (an issue, a comment, a label) with no private content and no @-mention, are done and then reported.
 - Keep reports short: what was done, where, and what is left for the user to decide. Leave out options the user has nothing to decide about."""

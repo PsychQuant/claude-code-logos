@@ -306,6 +306,7 @@ Before a skill asks the user anything, check:
 - Would any answer change what the agent does next? If not, do not ask.
 - Is there a reasonable default? Use it and state it.
 - Is the action irreversible, or does it send private content somewhere? Then ask, once, covering every action of that kind.
+- Are there other questions for the user in this step? Ask them in the same message, not over several turns.
 - Has the user already answered this? Do not ask again.
 
 **Runtime delivery**: the `SessionStart` hook injects the short Practice 8 rule next to the Practice 7 rule. No hook watches questions. `PreToolUse` context is added alongside the tool result, so a reminder on `AskUserQuestion` would arrive after the user had already been asked, and most of these questions are plain text in a reply, which no tool hook sees.

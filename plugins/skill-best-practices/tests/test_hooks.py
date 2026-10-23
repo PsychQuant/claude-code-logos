@@ -130,6 +130,9 @@ class SessionStartRule(unittest.TestCase):
         self.assertIn("Irreversible or private actions still need confirmation", text)
         self.assertIn("do not ask again", text)
 
+    def test_practice_8_asks_in_one_message(self):
+        self.assertIn("in one message, not over several turns", self.context())
+
     def test_both_rules_restored_after_compaction(self):
         text = self.context("compact")
         self.assertIn("Search locates, reading decides", text)
