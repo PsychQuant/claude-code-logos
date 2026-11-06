@@ -229,6 +229,45 @@ Do not rush through this. The output quality depends entirely on this step.
 
 ---
 
+## Practice 7: Search Locates, Reading Decides
+
+> A search can show where a passage is. Only reading the passage shows what it says.
+
+**Research**: Simon (1956) described *satisficing*: a decision-maker with limited capacity stops at the first option that meets an aspiration level instead of examining every option. Pirolli & Card (1999) *Information Foraging* modelled information search as foraging, where the searcher decides when to leave a patch of information and move on; leaving early is cheap at the moment and costly when the answer was further in. Klayman & Ha (1987) showed that people test a hypothesis by looking where they expect it to hold (the *positive test strategy*), which can miss the evidence that would disconfirm it.
+
+**Application to skills**: An agent told to "check the document against the source" will usually search the source with a keyword pattern. All three failure modes then line up. It takes the first matching line that fits what it expected (satisficing), it stops at whatever the terminal shows (an early patch exit, made worse when the output is cut by `| head`), and it searches only for wording that would confirm its expectation (positive testing). One observed case: an agent twice declared a source did not support a statement. Both times the search was piped to `head`, and the deciding line matched but fell past the cut. In one of the two, the first match came from a passage restating someone else's position, while the passage where the source stated its own conclusion, never read, said the opposite.
+
+**How to apply**:
+
+Any skill step that verifies something against a source names the reading action, not just a search:
+
+**Before (search only)**:
+```markdown
+3. Check each claim in the draft against the source document.
+```
+
+**After (search locates, reading decides)**:
+```markdown
+3. For each claim in the draft:
+   a. Search the source to locate candidate passages. Search output is for locating only;
+      never pipe it to head/tail and then conclude from what is visible.
+   b. If the claim says the source *decided*, *concluded* or *confirmed* something, Read in
+      full the section where the source states its own conclusion. A passage restating
+      someone else's position is not that conclusion.
+   c. Before writing "the source does not say X", search again with other wordings and
+      Read the surrounding section.
+   d. Quote the passage (file and line) that the verdict rests on.
+```
+
+**Runtime delivery**: this plugin also delivers Practice 7 while Claude works, not only when this skill is invoked. A `SessionStart` hook injects the short rule, and a `PreToolUse` hook on `Bash` adds a one-line reminder next to the result whenever a search is piped to `head`/`tail` or capped with `-m`. Neither hook blocks the command.
+
+**Sources**:
+- Klayman, J., & Ha, Y.-W. (1987). Confirmation, disconfirmation, and information in hypothesis testing. *Psychological Review, 94*(2), 211–228. https://doi.org/10.1037/0033-295X.94.2.211
+- Pirolli, P., & Card, S. (1999). Information foraging. *Psychological Review, 106*(4), 643–675. https://doi.org/10.1037/0033-295X.106.4.643
+- Simon, H. A. (1956). Rational choice and the structure of the environment. *Psychological Review, 63*(2), 129–138. https://doi.org/10.1037/h0042769
+
+---
+
 ## How to Use This Skill
 
 ### Audit an existing skill
@@ -248,3 +287,4 @@ If Claude keeps skipping steps or producing shallow output, check:
 4. Are there concrete examples? (Practice 4)
 5. Is there a self-check? (Practice 5)
 6. Is the critical step labeled as important? (Practice 6)
+7. Does every verification step name what to Read, not just what to search? (Practice 7)
