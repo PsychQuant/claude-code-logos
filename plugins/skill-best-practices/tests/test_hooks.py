@@ -115,6 +115,76 @@ class SessionStartRule(unittest.TestCase):
         self.assertIn("Search locates, reading decides", text)
         self.assertIn("truncated", text)
 
+    def context(self, source="startup"):
+        code, out, err = run("session_start.py", {"hook_event_name": "SessionStart", "source": source})
+        self.assertEqual(code, 0, err)
+        return json.loads(out)["hookSpecificOutput"]["additionalContext"]
+
+    def test_injects_practice_8_rule(self):
+        text = self.context()
+        self.assertIn("Ask only when the answer changes the next step", text)
+        self.assertIn("Practice 8", text)
+
+    def test_practice_8_keeps_irreversible_actions_confirmed(self):
+        text = self.context()
+        self.assertIn("Irreversible or private actions still need confirmation", text)
+        self.assertIn("Do not ask again about an item the user approved", text)
+
+    def test_practice_8_asks_in_one_message(self):
+        self.assertIn("in one message, not over several turns", self.context())
+
+    def test_practice_8_when_unsure_treat_as_irreversible(self):
+        self.assertIn("When unsure, treat the action as irreversible", self.context())
+
+    def test_practice_8_routine_records_are_a_closed_list(self):
+        text = self.context()
+        self.assertIn("only these four, never extended by similarity", text)
+        self.assertIn("goes back to confirmation", text)
+        self.assertIn("absolute paths on this machine", text)
+
+    def test_practice_8_approval_covers_only_listed_items(self):
+        text = self.context()
+        self.assertIn("One approval covers only the items listed in the message it answers", text)
+        self.assertIn("An earlier answer is never approval for an irreversible action it did not list", text)
+
+    def test_practice_8_owner_complaints_are_pinned(self):
+        # The three behaviours the issue reported: an issue in the user's own
+        # repository was confirmed, an approved batch was re-asked, reports were long.
+        text = self.context()
+        self.assertIn("(1) creating an issue or a comment", text)
+        self.assertIn("say so in one line", text)
+        self.assertIn("Keep reports short", text)
+
+    def test_practice_8_routine_records_need_the_users_request(self):
+        text = self.context()
+        self.assertIn("only for work the user asked for in this conversation", text)
+        self.assertIn("is not a request", text)
+
+    def test_practice_8_private_content_is_wide_and_paths_are_absolute(self):
+        text = self.context()
+        self.assertIn("credentials or tokens", text)
+        self.assertIn("absolute paths on this machine", text)
+        self.assertIn("when unsure whether content is private, ask", text)
+
+    def test_practice_8_baseline_tag_only_on_the_remote_default_commit(self):
+        self.assertIn("the commit the remote default branch already points to", self.context())
+
+    def test_practice_8_named_instruction_and_reply_coverage(self):
+        text = self.context()
+        self.assertIn("names the action and its target is approval of that item", text)
+        self.assertIn("covers every listed push", text)
+
+    def test_practice_8_explicit_instructions_to_ask_still_apply(self):
+        self.assertIn(
+            "An explicit instruction from the user, their CLAUDE.md or a skill to ask, confirm or wait still applies",
+            self.context(),
+        )
+
+    def test_both_rules_restored_after_compaction(self):
+        text = self.context("compact")
+        self.assertIn("Search locates, reading decides", text)
+        self.assertIn("Ask only when the answer changes the next step", text)
+
 
 class SkillWritingReminder(unittest.TestCase):
     SCRIPT = "skill_writing_reminder.py"

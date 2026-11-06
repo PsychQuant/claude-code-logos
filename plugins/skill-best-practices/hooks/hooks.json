@@ -1,5 +1,5 @@
 {
-  "description": "Deliver skill-best-practices at runtime: the Practice 7 rule at session start, a reminder on truncated searches, and the skill-writing rule when a SKILL.md is edited. None of these hooks blocks a tool call.",
+  "description": "Deliver skill-best-practices at runtime: the Practice 7 and 8 rules at session start, a reminder on truncated searches, and the skill-writing rule when a SKILL.md is edited. None of these hooks blocks a tool call.",
   "hooks": {
     "SessionStart": [
       {

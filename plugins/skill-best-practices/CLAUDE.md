@@ -7,7 +7,7 @@ Evidence-based practices for writing better Claude Code skills.
 | Type | Name | Purpose |
 |------|------|---------|
 | Skill | `/skill-best-practices` | Audit a skill or learn best practices |
-| Hook (`SessionStart`) | `scripts/session_start.py` | Injects the Practice 7 runtime rule at every session start, resume, clear and compaction |
+| Hook (`SessionStart`) | `scripts/session_start.py` | Injects the Practice 7 and Practice 8 runtime rules at every session start, resume, clear and compaction |
 | Hook (`PreToolUse`, `Bash`) | `scripts/search_truncation_reminder.py` | Adds a one-line reminder next to the result when a search is piped to `head`/`tail` or capped with `-m` |
 | Hook (`PreToolUse`, `Write\|Edit`) | `scripts/skill_writing_reminder.py` | Adds `rules/skill-writing.md` as context the first time a `SKILL.md` is written or edited in a session |
 
@@ -15,7 +15,7 @@ Evidence-based practices for writing better Claude Code skills.
 
 ## When This Plugin Activates
 
-- **Hooks** (every session): the Practice 7 rule at session start, the truncated-search reminder on `Bash`, and the skill-writing rule when a `SKILL.md` is edited
+- **Hooks** (every session): the Practice 7 and 8 rules at session start, the truncated-search reminder on `Bash`, and the skill-writing rule when a `SKILL.md` is edited
 - **Skill** (on demand or auto): invoked when creating, reviewing, or debugging skills
 
 ## Tests
@@ -37,3 +37,4 @@ The tests feed synthetic hook payloads on stdin and check the scripts' stdout.
 | 5 | Self-check before completion | Reason (1990) |
 | 6 | Salient labeling | Tversky & Kahneman (1981); Mayer (2009) |
 | 7 | Search locates, reading decides | Simon (1956); Pirolli & Card (1999); Klayman & Ha (1987) |
+| 8 | Ask only when the answer changes the next step | Horvitz (1999); Mark, Gudith, & Klocke (2008); Altmann & Trafton (2002); Ancker et al. (2017) |

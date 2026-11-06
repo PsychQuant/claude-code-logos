@@ -1,0 +1,8 @@
+{
+  "name": "interruption-cost",
+  "version": "0.1.0",
+  "description": "Intervention: ask the user only when the answer changes the next step, and confirm irreversible actions once as a batch (Horvitz 1999; Mark, Gudith & Klocke 2008; Altmann & Trafton 2002; Ancker et al. 2017)",
+  "author": {
+    "name": "Che Cheng"
+  }
+}

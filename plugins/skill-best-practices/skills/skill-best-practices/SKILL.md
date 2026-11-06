@@ -268,6 +268,61 @@ Any skill step that verifies something against a source names the reading action
 
 ---
 
+## Practice 8: Ask Only When the Answer Changes the Next Step
+
+> Every question stops the user. Ask when the answer would change what happens next and there is no reasonable default.
+
+**Research**: Horvitz (1999) lists *employing dialog to resolve key uncertainties* among the principles of mixed-initiative interfaces: a system that is uncertain about the user's intentions should be able to ask, "considering the costs of potentially bothering a user needlessly." His expected-utility analysis gives a system three options: do nothing, ask, or act. Asking before an action the user wants is worth less than simply taking it, so asking is the best option only in a middle band of uncertainty. Below the band the system does nothing; above it, it acts. The thresholds move with context: the less an unwanted action is worth to the user, the higher the threshold for acting. Interruptions have measured costs for people. Mark, Gudith & Klocke (2008) found that people compensated for interruptions by working faster, at the price of more stress, higher frustration, time pressure and effort. In Altmann & Trafton's (2002) goal-activation model, a suspended goal has to be retrieved against interference from older goals, with the help of cues, and the authors discuss what this implies for the effects of task interruption. Ancker et al. (2017) found that clinicians accepted fewer decision-support alerts as they received more of them, particularly repeated alerts: the likelihood of accepting a reminder fell by 30% for each additional reminder per encounter.
+
+**Application to skills**: A question costs the agent one line and costs the user a stop. Two things push agents to ask too much. Skills say "confirm with the user" without saying which steps need it, and rules written for irreversible actions get applied to cheap, reversible ones. One observed case: an agent treated creating an issue in the user's own repository as an irreversible action and showed a four-item confirmation block. Later the user answered "push" to a block that listed several pending pushes; the agent pushed one repository and asked again, with a full block, about the others. Its status reports listed every option, including ones the user had nothing to decide about. In Horvitz's terms each of these questions was worth less than acting on the default. The other studies concern people at work and clinicians reading alerts, not an agent's questions, so applying them here is an analogy: a confirmation that appears at every step is the frequent, repeated kind of prompt that Ancker et al. found clinicians less likely to act on.
+
+This is not "ask less". The same analysis keeps irreversible actions in the confirmation branch: when acting wrongly is costly, the threshold for acting without asking rises. Pushing code, sending a message, publishing, paying and deleting without a backup are still confirmed. The practice moves questions from where the answer does not matter to where it does.
+
+**How to apply**:
+
+A skill step that asks the user states what the answer changes, and the default to use when there is one. Irreversible steps are grouped so that one confirmation covers them.
+
+**Before (asks at every step)**:
+```markdown
+4. Ask the user to confirm before each action: creating the issue, adding the label,
+   pushing the branch, opening the pull request.
+5. Report every check that passed and every option for what to do next.
+```
+
+**After (asks where the answer matters)**:
+```markdown
+4. Create the issue and add the label in the user's repository, then report them in one
+   line. These are routine records; do not ask, as long as the user asked for this work,
+   the body has no private content (credentials or tokens, third-party verbatim text,
+   other people's names or personal data, unpublished work, absolute paths on this
+   machine) and it mentions no one with @. Otherwise ask first.
+5. Pushing the branch and opening the pull request publish code. Ask once for both: list
+   what will be pushed, to which remote, and the pull request title, then wait. One
+   approval covers the batch; do not ask again about an item in it.
+6. When a decision has a default (a convention, this skill's default, an earlier answer
+   in the conversation), use it and say so in one line instead of asking.
+7. Report what was done, where, and what is left for the user to decide. Leave out
+   options the user has nothing to decide about.
+```
+
+Before a skill asks the user anything, check:
+- Did the user, their CLAUDE.md or the skill itself say to ask or wait here? Then ask. This practice removes only the questions an agent adds on its own.
+- Would any answer change what the agent does next? If not, do not ask.
+- Is there a reasonable default for a reversible decision? Use it and state it.
+- Is the action irreversible, or does it send private content somewhere? Then ask, once, listing every such action. If it is unclear whether the action can be undone, treat it as irreversible.
+- Are there other questions for the user in this step? Ask them in the same message, not over several turns.
+- Has the user already approved exactly this item, unchanged? Do not ask again. If the item changed or is new, ask.
+
+**Runtime delivery**: the `SessionStart` hook injects the short Practice 8 rule next to the Practice 7 rule. No hook watches questions. `PreToolUse` context is added alongside the tool result, so a reminder on `AskUserQuestion` would arrive after the user had already been asked, and most of these questions are plain text in a reply, which no tool hook sees.
+
+**Sources**:
+- Altmann, E. M., & Trafton, J. G. (2002). Memory for goals: An activation-based model. *Cognitive Science, 26*(1), 39–83. https://doi.org/10.1207/s15516709cog2601_2
+- Ancker, J. S., Edwards, A., Nosal, S., Hauser, D., Mauer, E., & Kaushal, R. (2017). Effects of workload, work complexity, and repeated alerts on alert fatigue in a clinical decision support system. *BMC Medical Informatics and Decision Making, 17*, Article 36. https://doi.org/10.1186/s12911-017-0430-8
+- Horvitz, E. (1999). Principles of mixed-initiative user interfaces. In *Proceedings of the SIGCHI Conference on Human Factors in Computing Systems* (pp. 159–166). ACM. https://doi.org/10.1145/302979.303030
+- Mark, G., Gudith, D., & Klocke, U. (2008). The cost of interrupted work: More speed and stress. In *Proceedings of the SIGCHI Conference on Human Factors in Computing Systems* (pp. 107–110). ACM. https://doi.org/10.1145/1357054.1357072
+
+---
+
 ## How to Use This Skill
 
 ### Audit an existing skill
@@ -288,3 +343,4 @@ If Claude keeps skipping steps or producing shallow output, check:
 5. Is there a self-check? (Practice 5)
 6. Is the critical step labeled as important? (Practice 6)
 7. Does every verification step name what to Read, not just what to search? (Practice 7)
+8. Does every question the skill asks change what happens next, with irreversible steps confirmed once as a batch? (Practice 8)
