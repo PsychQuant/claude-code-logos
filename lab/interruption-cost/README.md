@@ -18,7 +18,7 @@ The unit is the stop, not the question: one message with five questions is one s
 
 | Measure | How it is obtained |
 |---|---|
-| **Stops per completed task** (primary) | A coder marks every reply where the agent waited on a decision from the user, with or without a question mark, and divides by the number of completed tasks. `count_questions.py` gives the candidate list and an approximate lower bound (`questions`; see Limits). |
+| **Stops per completed task** (primary) | A coder marks every reply where the agent waited on a decision from the user, with or without a question mark, and divides by the number of completed tasks. `count_questions.py` gives the candidate list and an approximate lower bound: `questions` misses stops without a question mark and can include a few questions the agent did not wait on (see Limits). |
 | Questions asked | `ask_tool_questions` plus a coder's count of the questions inside each coded stop |
 | Re-asks after an approval | A coder starts from `reask_after_typed_answer_lines` (asked again right after the person typed an answer), then the rest of `consecutive_ask_lines`, and marks which asked again about something already approved |
 | Irreversible actions confirmed | Coded by hand: for each irreversible action in the task (push, send, publish, delete without a backup), was there a confirmation before it? |
@@ -26,7 +26,7 @@ The unit is the stop, not the question: one message with five questions is one s
 
 The script's `questions` cannot be the primary measure. The rule asks for short reports that say "what is left for the user to decide", which can end a turn with a statement instead of a question, so a script that counts question marks would favour the treatment.
 
-Most consecutive asks are a different next question in the same workflow, not a re-ask. On the author's 80 most recent transcripts on 2026-11-06, the script found 1,327 asks, 287 consecutive asks and 230 asks right after a typed answer. This is a snapshot: the set changes with every session, and a run later the same day gave 475, 83 and 63.
+Most consecutive asks are a different next question in the same workflow, not a re-ask. On the author's 80 most recent transcripts on 2026-11-06 (5,005 human turns), the script found 1,327 asks (848 question replies and 479 `AskUserQuestion` calls), 287 consecutive asks and 230 asks right after a typed answer. This is a snapshot: the set changes with every session, and a run later the same day covered 1,674 human turns and found 475, 83 and 63. The figures under Limits come from the first run.
 
 ## Running a trial
 
@@ -48,9 +48,9 @@ Most consecutive asks are a different next question in the same workflow, not a 
        if isinstance(a, dict) and e.get("type") == "attachment" and str(a.get("type", "")).startswith("hook"):
            continue
        sys.stdout.write(line)' transcript.jsonl > for-coding.jsonl
-   python3 lab/interruption-cost/scripts/count_questions.py for-coding.jsonl --tasks <completed tasks> --json
+   python3 "$REPO/lab/interruption-cost/scripts/count_questions.py" for-coding.jsonl --tasks <completed tasks> --json
    ```
-   The transcript is the file Claude Code passes to hooks as `transcript_path`, under the configuration directory. Claude Code writes it asynchronously, so measure after the session has ended. Run the script on the stripped file so its line numbers match what the coder reads. Blinding is partial: the treatment's behaviour, such as stating a default in one line, can still reveal the condition.
+   The transcript is the file Claude Code passes to hooks as `transcript_path`, under the configuration directory. Copy it to `transcript.jsonl` in a working directory outside this repository, set `REPO` to the repository's path, and run the commands there. Both files hold the conversation, so treat them as private. Claude Code writes the transcript asynchronously, so measure after the session has ended. Run the script on the stripped file so its line numbers match what the coder reads. Blinding is partial: the treatment's behaviour, such as stating a default in one line, can still reveal the condition.
 6. Code the stops, the re-asks, the irreversible actions and the overturned defaults.
 
 ## What `count_questions.py` counts
@@ -73,8 +73,8 @@ The output contains counts, line numbers and the transcript's file name, never t
 - A rhetorical question in a report counts as a question; a request with no question mark ("Tell me which file to use.") does not. The coder marks stops by reading, not by this count.
 - A question inside a code fence is not counted, so a confirmation block printed in a fence is missed. The guard is coded by hand and does not rely on this script.
 - A task notification, or a message the person sends while the agent is still working, ends the reply at that point, so narration written before it can be counted as a reply.
-- A question in text before a tool call counts when no later text replaces it, even if the agent carried on, so `questions` is not a strict lower bound. On the 1,327 asks above, this accounted for at most 12. The script keeps such text because dropping it would also lose real questions written just before a background tool.
-- A statement breaks the chain when it is the reply, or when it comes just before `AskUserQuestion`. A statement before an ordinary tool call does not, so the two ask forms are measured differently. Breaking the chain there too would cut the 287 consecutive asks above to 95. The list is a starting point for a coder, so the script favours recall (decision on #4).
+- A question in text before a tool call counts when no later text replaces it, even if the agent carried on, so `questions` is not a strict lower bound. Dropping such text removed 12 of the 848 question replies above, so at most 12 are false. The script keeps it because a question written just before a background tool can be a real stop, and dropping the text would lose those too.
+- A statement breaks the chain when it is the reply, or when it is still the latest text at an `AskUserQuestion` call, even with a tool call in between. A statement followed by a tool call and then a text question does not, so the two ask forms are measured differently. Dropping the text before a tool call raised the 287 consecutive asks above to 372; dropping it and breaking the chain on it cut them to 95. A coder confirms each consecutive ask, so the candidate list favours recall (decision on #4).
 - An unclosed code fence hides every question after it. An ASCII ? directly before a letter, as in `ok?Next`, is not counted.
 - Two `AskUserQuestion` blocks in one assistant message are counted as consecutive. A declined `AskUserQuestion` still counts as answered. A new instruction sent before the agent writes anything keeps the chain. A coder confirms each consecutive ask.
 - The treatment adds a few hundred words of context that the baseline does not have. A length-matched neutral text in the baseline would separate the rule's content from its length; it is not part of this protocol.

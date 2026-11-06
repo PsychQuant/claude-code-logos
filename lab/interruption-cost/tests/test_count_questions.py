@@ -329,6 +329,17 @@ class Measure(unittest.TestCase):
                           assistant(text("Which section?")), human("intro")])
         self.assertEqual((m["consecutive_asks"], m["reasks_after_typed_answer"]), (1, 1))
 
+    def test_a_statement_before_a_tool_call_breaks_the_chain_for_the_ask_tool(self):
+        m = self.measure([human("go"), assistant(text("Which file?")), human("a.py"),
+                          assistant(text("Reading it.")), assistant(bash_tool()), tool_result(),
+                          assistant(ask_tool()), tool_result(), human("next")])
+        self.assertEqual((m["consecutive_asks"], m["reasks_after_typed_answer"]), (0, 0))
+
+    def test_a_question_before_a_background_tool_is_a_stop_at_the_notification(self):
+        m = self.measure([human("go"), assistant(text("Running it. Want the log too?")), assistant(bash_tool()), tool_result(),
+                          notification(), human("yes")])
+        self.assertEqual((m["replies"], m["question_replies"]), (1, 1))
+
     def test_summary_names_the_file_without_its_directory(self):
         path = self.write([human("go"), assistant(text("Push?")), human("yes")])
         code, out, err = self.cli(path)
@@ -340,6 +351,7 @@ class Measure(unittest.TestCase):
 class ReadmeCommand(unittest.TestCase):
     def test_deidentification_command_runs_as_written(self):
         fence = re.search(r"^ *```bash\n((?:(?!```).)*?> for-coding\.jsonl\n)", README.read_text(), re.S | re.M)
+        self.assertIsNotNone(fence, "no bash fence in the README ends in `> for-coding.jsonl`")
         command = textwrap.dedent(fence.group(1))
         lines = [
             json.dumps(human("go")),
