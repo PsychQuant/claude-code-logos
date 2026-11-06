@@ -7,11 +7,14 @@ Claude Code writes) and checks the counts. Run with:
 """
 import json
 import pathlib
+import re
 import subprocess
 import tempfile
+import textwrap
 import unittest
 
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "count_questions.py"
+README = SCRIPT.parents[1] / "README.md"
 
 
 def human(content):
@@ -28,6 +31,10 @@ def text(t):
 
 def ask_tool():
     return {"type": "tool_use", "id": "toolu_ask", "name": "AskUserQuestion", "input": {"questions": []}}
+
+
+def bash_tool():
+    return {"type": "tool_use", "id": "toolu_bash", "name": "Bash", "input": {}}
 
 
 def tool_result():
@@ -303,12 +310,50 @@ class Measure(unittest.TestCase):
         self.assertEqual((m["consecutive_asks"], m["reasks_after_typed_answer"]), (2, 1))
         self.assertEqual(m["reask_after_typed_answer_lines"], [6])
 
+    # Text before a tool call. These pin a decision on #4 (verify round 3): the
+    # script favours recall, so changing them moves the coder's candidate list.
+
+    def test_text_before_a_tool_call_is_the_reply_when_no_later_text_replaces_it(self):
+        m = self.measure([human("go"), assistant(text("Should I check the log?")), assistant(bash_tool()), tool_result(),
+                          human("next")])
+        self.assertEqual((m["replies"], m["question_replies"]), (1, 1))
+
+    def test_later_text_replaces_text_before_a_tool_call(self):
+        m = self.measure([human("go"), assistant(text("Should I check the log?")), assistant(bash_tool()), tool_result(),
+                          assistant(text("Checked.")), human("next")])
+        self.assertEqual((m["replies"], m["question_replies"]), (1, 0))
+
+    def test_a_statement_before_a_tool_call_keeps_the_chain_for_a_text_question(self):
+        m = self.measure([human("go"), assistant(text("Which file?")), human("a.py"),
+                          assistant(text("Reading it.")), assistant(bash_tool()), tool_result(),
+                          assistant(text("Which section?")), human("intro")])
+        self.assertEqual((m["consecutive_asks"], m["reasks_after_typed_answer"]), (1, 1))
+
     def test_summary_names_the_file_without_its_directory(self):
         path = self.write([human("go"), assistant(text("Push?")), human("yes")])
         code, out, err = self.cli(path)
         self.assertEqual(code, 0, err)
         self.assertIn(path.name, out)
         self.assertNotIn(str(path.parent), out)
+
+
+class ReadmeCommand(unittest.TestCase):
+    def test_deidentification_command_runs_as_written(self):
+        fence = re.search(r"^ *```bash\n((?:(?!```).)*?> for-coding\.jsonl\n)", README.read_text(), re.S | re.M)
+        command = textwrap.dedent(fence.group(1))
+        lines = [
+            json.dumps(human("go")),
+            json.dumps({"type": "attachment", "attachment": {"type": "hook_additional_context"}}),
+            json.dumps({"type": "api-request-blob"}),
+            "not json",
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = pathlib.Path(tmp)
+            (directory / "transcript.jsonl").write_text("\n".join(lines) + "\n")
+            proc = subprocess.run(["bash", "-c", command], cwd=directory, capture_output=True, text=True, timeout=10)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            kept = (directory / "for-coding.jsonl").read_text().splitlines()
+        self.assertEqual(kept, [lines[0], lines[3]])
 
 
 if __name__ == "__main__":

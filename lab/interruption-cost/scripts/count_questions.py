@@ -194,7 +194,7 @@ def measure(lines):
                     record_ask(line_no)
                     state["last"] = "answered_tool"  # the tool returns once the person has answered
                 elif block.get("type") == "tool_use":
-                    state["text_open"] = False  # text before a tool call is narration, not the reply
+                    state["text_open"] = False  # the text stays pending: it is the reply unless later text replaces it
                 elif block.get("type") == "text" and block_text(block).strip():
                     if state["text_open"] and state["pending"] is not None:
                         state["pending"] = (line_no, state["pending"][1] + "\n" + block_text(block))

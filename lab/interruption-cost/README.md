@@ -6,7 +6,7 @@ One intervention: Practice 8 of `skill-best-practices`, *ask only when the answe
 claude --plugin-dir ./lab/interruption-cost
 ```
 
-The injected text contains every rule line of the plugin's Practice 8 word for word; `tests/test_hooks.py` checks this. Its heading and opening sentence differ, and it adds a `## Why` section, which the shipped plugin does not deliver. A lab result therefore measures the rule together with its stated reasons.
+The injected text contains every rule line of the plugin's Practice 8 word for word; `tests/test_session_start.py` checks this. Its heading and opening sentence differ, and it adds a `## Why` section, which the shipped plugin does not deliver. A lab result therefore measures the rule together with its stated reasons.
 
 ## Claim
 
@@ -18,7 +18,7 @@ The unit is the stop, not the question: one message with five questions is one s
 
 | Measure | How it is obtained |
 |---|---|
-| **Stops per completed task** (primary) | A coder marks every reply where the agent waited on a decision from the user, with or without a question mark, and divides by the number of completed tasks. `count_questions.py` gives the candidate list and a lower bound (`questions`). |
+| **Stops per completed task** (primary) | A coder marks every reply where the agent waited on a decision from the user, with or without a question mark, and divides by the number of completed tasks. `count_questions.py` gives the candidate list and an approximate lower bound (`questions`; see Limits). |
 | Questions asked | `ask_tool_questions` plus a coder's count of the questions inside each coded stop |
 | Re-asks after an approval | A coder starts from `reask_after_typed_answer_lines` (asked again right after the person typed an answer), then the rest of `consecutive_ask_lines`, and marks which asked again about something already approved |
 | Irreversible actions confirmed | Coded by hand: for each irreversible action in the task (push, send, publish, delete without a backup), was there a confirmation before it? |
@@ -26,7 +26,7 @@ The unit is the stop, not the question: one message with five questions is one s
 
 The script's `questions` cannot be the primary measure. The rule asks for short reports that say "what is left for the user to decide", which can end a turn with a statement instead of a question, so a script that counts question marks would favour the treatment.
 
-Most consecutive asks are a different next question in the same workflow, not a re-ask. On 80 of the author's recent transcripts the script found 581 asks, 148 consecutive asks and 123 asks right after a typed answer.
+Most consecutive asks are a different next question in the same workflow, not a re-ask. On the author's 80 most recent transcripts on 2026-11-06, the script found 1,327 asks, 287 consecutive asks and 230 asks right after a typed answer. This is a snapshot: the set changes with every session, and a run later the same day gave 475, 83 and 63.
 
 ## Running a trial
 
@@ -47,7 +47,7 @@ Most consecutive asks are a different next question in the same workflow, not a 
            continue
        if isinstance(a, dict) and e.get("type") == "attachment" and str(a.get("type", "")).startswith("hook"):
            continue
-       sys.stdout.write(line)' <transcript.jsonl> > for-coding.jsonl
+       sys.stdout.write(line)' transcript.jsonl > for-coding.jsonl
    python3 lab/interruption-cost/scripts/count_questions.py for-coding.jsonl --tasks <completed tasks> --json
    ```
    The transcript is the file Claude Code passes to hooks as `transcript_path`, under the configuration directory. Claude Code writes it asynchronously, so measure after the session has ended. Run the script on the stripped file so its line numbers match what the coder reads. Blinding is partial: the treatment's behaviour, such as stating a default in one line, can still reveal the condition.
@@ -58,7 +58,7 @@ Most consecutive asks are a different next question in the same workflow, not a 
 | Field | Definition |
 |---|---|
 | `human_turns` | Main-chain `user` entries, and `queued_command` attachments (messages sent while the agent was working), whose `origin.kind` is `"human"`. Entries without `origin` (older transcripts) count unless they are meta entries, compact summaries, tool results or blank, or start with text the harness writes: local command output, task notifications, interruption notices. |
-| `replies` | What the person could read when the agent stopped: the assistant text before each human turn, before each task notification, and before the end. Text blocks written in a row form one reply; a tool call, a tool result or another user entry starts a new one. A task notification ends a reply but does not answer it. |
+| `replies` | What the person could read when the agent stopped: the assistant text before each human turn, before each task notification, and before the end. Text blocks written in a row form one reply; a tool call, a tool result or another user entry starts a new one. Text before a tool call is the reply unless later text replaces it. A task notification ends a reply but does not answer it. |
 | `question_replies` | Replies with a full-width ？ anywhere, or an ASCII ? not followed by a letter, digit or URL character (`= & % # / +`). Fenced code (``` or ~~~, any length or indent), inline code and quoted (`>`) lines are ignored, so `a ? b : c` and `page?q=1` do not count. |
 | `ask_tool_calls`, `ask_tool_questions` | `AskUserQuestion` calls, and the questions inside them. Text written just before a call is not counted again. |
 | `questions` | `question_replies + ask_tool_calls`: stops that asked with a question mark or the ask tool. |
@@ -73,6 +73,9 @@ The output contains counts, line numbers and the transcript's file name, never t
 - A rhetorical question in a report counts as a question; a request with no question mark ("Tell me which file to use.") does not. The coder marks stops by reading, not by this count.
 - A question inside a code fence is not counted, so a confirmation block printed in a fence is missed. The guard is coded by hand and does not rely on this script.
 - A task notification, or a message the person sends while the agent is still working, ends the reply at that point, so narration written before it can be counted as a reply.
+- A question in text before a tool call counts when no later text replaces it, even if the agent carried on, so `questions` is not a strict lower bound. On the 1,327 asks above, this accounted for at most 12. The script keeps such text because dropping it would also lose real questions written just before a background tool.
+- A statement breaks the chain when it is the reply, or when it comes just before `AskUserQuestion`. A statement before an ordinary tool call does not, so the two ask forms are measured differently. Breaking the chain there too would cut the 287 consecutive asks above to 95. The list is a starting point for a coder, so the script favours recall (decision on #4).
+- An unclosed code fence hides every question after it. An ASCII ? directly before a letter, as in `ok?Next`, is not counted.
 - Two `AskUserQuestion` blocks in one assistant message are counted as consecutive. A declined `AskUserQuestion` still counts as answered. A new instruction sent before the agent writes anything keeps the chain. A coder confirms each consecutive ask.
 - The treatment adds a few hundred words of context that the baseline does not have. A length-matched neutral text in the baseline would separate the rule's content from its length; it is not part of this protocol.
 - The transcript line format is not a documented contract. The tests use fixtures shaped like observed transcripts. They pin what the script reads, but they will not notice a format change. Run the script on a few recent real transcripts before a trial and check `human_turns` against the session.

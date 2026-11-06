@@ -2,7 +2,7 @@
 """SessionStart hook: inject the interruption-cost intervention (Practice 8).
 
 The rule lines are the ones skill-best-practices ships, word for word, so the
-lab measures the rule users get; tests/test_hooks.py checks that they match.
+lab measures the rule users get; tests/test_session_start.py checks that they match.
 The lab text adds a `## Why` section, which the shipped rule does not carry.
 
 Runs on every session source (startup, resume, clear, compact, fork), so the
