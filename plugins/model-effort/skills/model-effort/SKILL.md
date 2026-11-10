@@ -38,7 +38,7 @@ Before recommending anything, read what applies now:
 
 1. **When a result falls short, change one thing at a time, in this order.** [blog]
    1. Let the model check its own work: a test, a build, a script that calls the endpoint.
-   2. Raise effort one level, up to `high`. If the work already runs at `high`, skip this step: test the next model up first (principle 2).
+   2. Raise effort one level, up to `high`. If the work already runs at `high`, skip this step: test the next model up first (principle 2). On Fable 5.2 there is no model up: go to `xhigh` only for the hardest long-running work where you have measured a gain, and keep `max` for measuring the ceiling [docs].
    3. Move to the next model up, starting at a lower effort level than you used on the smaller one.
 
    A higher effort level will not give a model knowledge or skill it lacks; that needs a bigger model. [blog]
@@ -148,6 +148,7 @@ Places where this goes wrong without a warning [docs]:
 ### 3. `agent()` in a Workflow script
 
 - **Options** [workflow-authoring skill]: `agent(prompt, {model, effort, ...})`, where `effort` is `'low' | 'medium' | 'high' | 'xhigh' | 'max'`. Omitted, both come from the session.
+- **A pinned model with no effort, two sources**: the workflow-authoring skill says an omitted `effort` inherits the session's level; the subagent docs say the session's level does not apply on a different model. So when you pin a model, name the effort level too.
 - **Cost** [docs]: Claude Code picks each workflow agent's model in the same order as for subagents, and a model the script names counts as the per-invocation model. When nothing assigns one, the agent runs on the session's model. The docs' advice: check `/model` before a large run, and use a smaller model for stages that don't need the strongest one. [judgment] A wide fan-out with no pins pays the session model's price once per agent.
 - **Delegating bulk work** [blog]: on a defect-search benchmark over about 22 million tokens of source code, an Opus 5.5 lead with up to 25 Sonnet 5.5 workers at a time cost about a third less than Opus 5.5 alone at its default effort, and scored about the same. For one chain of dependent steps, or for work that fits in one context window, skip the fan-out: planning and merging cost more than they save.
 - **Starting points** [judgment]:
