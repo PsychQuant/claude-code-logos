@@ -21,7 +21,7 @@ claude-code-logos/
 
 | 目錄 | 在 marketplace.json | 安裝方式 | 用途 |
 |------|---------------------|---------|------|
-| `plugins/` | 是 | `claude plugin install skill-best-practices` | 一般使用者，全部 practice 一起裝 |
+| `plugins/` | 是 | `claude plugin install skill-best-practices`、`claude plugin install model-effort` | 一般使用者。`skill-best-practices` 是全部 practice 一起裝；`model-effort` 是獨立的 skill，不屬於八個 practice |
 | `lab/` | 否 | `claude --plugin-dir ./lab/checklist-visibility` | 實驗用，只載入單一介入 |
 
 ## 實驗設計
