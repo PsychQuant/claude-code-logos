@@ -7,7 +7,8 @@ Science-backed plugins that make Claude Code work better.
 ```
 claude-code-logos/
 ├── plugins/                    ← 公開 plugin（在 marketplace.json 裡）
-│   └── skill-best-practices/   ← 全部 8 個 practice，日常使用（skill ＋ hooks）
+│   ├── skill-best-practices/   ← 全部 8 個 practice，日常使用（skill ＋ hooks）
+│   └── model-effort/           ← 選 model 與 effort（只有 skill；依據是官方文檔與 Anthropic benchmark，事實有日期，要定期重查，#11）
 ├── lab/                        ← 實驗用 plugin（不在 marketplace.json 裡）
 │   ├── checklist-visibility/   ← 介入 1：TaskCreate 清單
 │   ├── interruption-cost/      ← 介入 8：只在答案會改變下一步時提問（SessionStart hook）

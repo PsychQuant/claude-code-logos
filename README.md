@@ -11,6 +11,7 @@ Every plugin in this marketplace is grounded in published research from cognitiv
 ```bash
 claude plugin marketplace add PsychQuant/claude-code-logos
 claude plugin install skill-best-practices@claude-code-logos
+claude plugin install model-effort@claude-code-logos
 ```
 
 Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-practices --marketplace PsychQuant/claude-code-logos`
@@ -27,7 +28,11 @@ Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-pr
 |--------|--------------|
 | `skill-best-practices` | Eight evidence-based practices for writing Claude Code skills, as an on-demand skill, plus hooks that deliver the rules while Claude works: session-start rules (read search results before concluding; ask the user only when the answer changes the next step, while still confirming irreversible actions) and a reminder when search output is truncated |
 
-**This plugin changes when the agent asks you.** For work you asked for, in a repository you can write to, it no longer asks first before four routine GitHub records: creating an issue or comment, editing your own issue body or comment, setting a label or milestone or assigning you, and the IDD baseline tag. If the content is private or mentions someone, it still asks. A stricter policy of your own wins, and Claude Code's permission prompts still apply.
+| `model-effort` | An on-demand skill for choosing the Claude model and effort level: the session's `/model` and `/effort`, subagents, Workflow `agent()` calls, skill frontmatter, and Claude API scripts. Claude Code defaults and API defaults are kept apart, and settings that fail silently are named (a top-level `effortLevel` that newer models ignore, subagents that don't inherit the session's level) |
+
+**`model-effort` rests on vendor evidence, not published research.** Its sources are the Claude Code and Claude API documentation and Anthropic's own benchmarks, each recommendation is tagged with its source, and the skill states the date its facts were checked. Model names, defaults and prices change between releases, so treat a stale date as a reason to re-check.
+
+**`skill-best-practices` changes when the agent asks you.** For work you asked for, in a repository you can write to, it no longer asks first before four routine GitHub records: creating an issue or comment, editing your own issue body or comment, setting a label or milestone or assigning you, and the IDD baseline tag. If the content is private or mentions someone, it still asks. A stricter policy of your own wins, and Claude Code's permission prompts still apply.
 
 ## Research Foundations
 

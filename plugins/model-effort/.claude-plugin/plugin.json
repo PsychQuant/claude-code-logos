@@ -1,0 +1,8 @@
+{
+  "name": "model-effort",
+  "version": "0.1.0",
+  "description": "Choose the Claude model and effort level for each situation — session, subagents, Workflow agents, skill frontmatter, API scripts — with Claude Code and API defaults kept apart and every recommendation tagged with its source",
+  "author": {
+    "name": "Che Cheng"
+  }
+}
