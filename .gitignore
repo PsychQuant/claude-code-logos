@@ -1,1 +1,7 @@
 __pycache__/
+
+# IDD tree-lock (idd-tree-lock.sh #183) — per-machine session state, not tracked
+.claude/.idd/tree-lock
+
+# Spectra app data
+.spectra/
