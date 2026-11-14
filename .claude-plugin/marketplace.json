@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-code-logos",
-  "description": "Science-backed plugins that make Claude Code work better — grounded in cognitive science, behavioral economics, and software engineering research",
+  "description": "Plugins that manage how Claude Code runs — how skills are written, which model and effort to use, where documentation answers come from. Each states the evidence it rests on.",
   "owner": {
     "name": "Che Cheng",
     "email": "che@psychquant.com"
@@ -26,6 +26,19 @@
         "name": "Che Cheng"
       },
       "source": "./plugins/model-effort",
+      "category": "development"
+    },
+    {
+      "name": "livedocs",
+      "description": "Answer questions about a library, SDK or CLI from its primary source, read live — llms.txt, package registry, repository, OpenAPI/GraphQL, CLI introspection — through an MCP server and a look-up skill",
+      "author": {
+        "name": "Che Cheng"
+      },
+      "source": {
+        "source": "git-subdir",
+        "url": "PsychQuant/livedocs",
+        "path": "plugins/livedocs"
+      },
       "category": "development"
     }
   ]
