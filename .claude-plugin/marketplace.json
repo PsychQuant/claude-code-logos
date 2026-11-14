@@ -30,13 +30,13 @@
     },
     {
       "name": "livedocs",
-      "description": "Answer questions about a library, SDK or CLI from its primary source, read live — llms.txt, package registry, repository, OpenAPI/GraphQL, CLI introspection — through an MCP server and a look-up skill",
+      "description": "Answer questions about a library, SDK or CLI from its primary source, read live — llms.txt, package registry, repository, OpenAPI/GraphQL, CLI introspection — through an MCP server and a look-up skill. macOS only; the plugin downloads its MCP server binary",
       "author": {
         "name": "Che Cheng"
       },
       "source": {
         "source": "git-subdir",
-        "url": "PsychQuant/livedocs",
+        "url": "https://github.com/PsychQuant/livedocs.git",
         "path": "plugins/livedocs"
       },
       "category": "development"

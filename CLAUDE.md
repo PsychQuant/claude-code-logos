@@ -53,8 +53,8 @@ claude-code-logos/
 
 | 目錄 | 在 marketplace.json | 安裝方式 | 用途 |
 |------|---------------------|---------|------|
-| `plugins/` | 是 | `claude plugin install skill-best-practices`、`claude plugin install model-effort` | 一般使用者。`skill-best-practices` 是全部 practice 一起裝；`model-effort` 是獨立的 skill，不屬於八個 practice |
-| 別的 repo（`git-subdir` 條目） | 是 | `claude plugin install livedocs` | 檔案不在這個 repo。`livedocs` 的 plugin 外殼、MCP 原始碼與 release 都在 `PsychQuant/livedocs`，這裡只有 `marketplace.json` 的一筆條目 |
+| `plugins/` | 是 | `claude plugin install skill-best-practices@claude-code-logos`、`claude plugin install model-effort@claude-code-logos` | 一般使用者。`skill-best-practices` 是全部 practice 一起裝；`model-effort` 是獨立的 skill，不屬於八個 practice |
+| 別的 repo（`git-subdir` 條目） | 是 | `claude plugin install livedocs@claude-code-logos` | 檔案不在這個 repo。`livedocs` 的 plugin 外殼、MCP 原始碼與 release 都在 `PsychQuant/livedocs`，這裡只有 `marketplace.json` 的一筆條目 |
 | `lab/` | 否 | `claude --plugin-dir ./lab/checklist-visibility` | 實驗用，只載入單一介入 |
 
 ## 實驗設計
@@ -98,8 +98,9 @@ claude-code-logos/
 ## 開發規範
 
 - 收錄標準：plugin 管的是 Claude Code 本身怎麼跑。研究依據是個別 plugin 的性質，寫在 README 的 Plugins 表「Rests on」欄，不是收錄條件
-- 住在別的 repo 的 plugin：在 `marketplace.json` 用 `git-subdir` 條目列出（`url`、`path`），不寫 `version`（跟著該 plugin 自己的 `plugin.json`），不把檔案複製進來（#18）
-- README 的 Plugins 表與 `marketplace.json` 要列同一組 plugin，`tests/test_marketplace.py` 會檢查
+- 住在別的 repo 的 plugin：在 `marketplace.json` 用 `git-subdir` 條目列出，`url` 寫完整的 `https://`（`owner/repo` 簡寫在沒有 GitHub SSH key 的機器上會裝不起來），不寫 `version`（跟著該 plugin 自己的 `plugin.json`），不把檔案複製進來。不 pin `sha` 的寫法只用在維護者相同的 repo，README 那一列要寫明它跟著對方的預設分支；對方的 commit 弄壞安裝時，退路是加 `sha`（#18）
+- marketplace 怎麼列 plugin、README 要寫什麼，規格在 `docs/spectra/specs/marketplace-catalogue/spec.md`
+- README 的 Plugins 表與 `marketplace.json` 要列同一組 plugin，`tests/test_marketplace.py` 會檢查（這個 repo 沒有 CI，要手動跑 `pytest`）
 - 每個 lab plugin 只做**一件事**（一個介入），這樣才能隔離變項
 - 介入必須經會載入的元件送達（hook 或 skill）；只放 `rules/` 等於沒有介入（見上方〈實驗設計〉的警語）
 - 介入的文字裡必須包含 `## Why` section 說明研究根據

@@ -15,6 +15,8 @@ claude plugin install model-effort@claude-code-logos
 claude plugin install livedocs@claude-code-logos
 ```
 
+If you already installed `livedocs@livedocs-marketplace`, remove that marketplace first (`claude plugin marketplace remove livedocs-marketplace`, which also uninstalls its plugin), so that two copies of the plugin are not enabled together.
+
 Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-practices --marketplace PsychQuant/claude-code-logos`
 
 ## Principles
@@ -28,8 +30,8 @@ Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-pr
 | Plugin | What it does | Rests on | Lives in |
 |--------|--------------|----------|----------|
 | `skill-best-practices` | Eight evidence-based practices for writing Claude Code skills, as an on-demand skill, plus hooks that deliver the rules while Claude works: session-start rules (read search results before concluding; ask the user only when the answer changes the next step, while still confirming irreversible actions) and a reminder when search output is truncated | Published research (see [Research Foundations](#research-foundations)) | this repository |
-| `model-effort` | An on-demand skill for choosing the Claude model and effort level: the session's `/model` and `/effort`, subagents, Workflow `agent()` calls, skill frontmatter, and Claude API scripts. Claude Code defaults and API defaults are kept apart, and settings that fail silently are named (a top-level `effortLevel` that newer models ignore, subagents that don't inherit the session's level) | Claude Code and Claude API documentation and Anthropic's own benchmarks, each recommendation tagged with its source and the date it was checked; a stale date is a reason to re-check | this repository |
-| `livedocs` | An MCP server and a look-up skill that answer questions about a library, SDK or CLI from its primary source instead of from training data or a pre-built index | The library's own primary source, read at the time of the question (llms.txt, package registry, repository, OpenAPI/GraphQL, CLI introspection) | [`PsychQuant/livedocs`](https://github.com/PsychQuant/livedocs) |
+| `model-effort` | An on-demand skill for choosing the Claude model and effort level: the session's `/model` and `/effort`, subagents, Workflow `agent()` calls, skill frontmatter, and Claude API scripts. Claude Code defaults and API defaults are kept apart, and settings that fail silently are named (a top-level `effortLevel` that newer models ignore, subagents that don't inherit the session's level) | Claude Code and Claude API documentation and Anthropic's own benchmarks, each recommendation is tagged with its source and the skill states the date its facts were checked; a stale date is a reason to re-check | this repository |
+| `livedocs` | An MCP server and a look-up skill that answer questions about a library, SDK or CLI from its primary source instead of from training data or a pre-built index. macOS only; the plugin's wrapper downloads the MCP server executable to `~/bin` and runs it | The library's own primary source, read at the time of the question (llms.txt, package registry, repository, OpenAPI/GraphQL, CLI introspection) | [`PsychQuant/livedocs`](https://github.com/PsychQuant/livedocs), installed from that repository's default branch: the entry is not pinned, so changes there are not reviewed in this repository |
 
 **`skill-best-practices` changes when the agent asks you.** For work you asked for, in a repository you can write to, it no longer asks first before four routine GitHub records: creating an issue or comment, editing your own issue body or comment, setting a label or milestone or assigning you, and the IDD baseline tag. If the content is private or mentions someone, it still asks. A stricter policy of your own wins, and Claude Code's permission prompts still apply.
 
