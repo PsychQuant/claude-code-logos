@@ -4,7 +4,7 @@
 
 Logos (λόγος) — reason, principle, rational order.
 
-Each plugin here changes how Claude Code itself works: how skills are written and followed, which model and effort level a piece of work gets, where answers about a library come from. Every plugin says what its claims rest on — published research, vendor documentation, or reading the primary source live.
+Each plugin here changes how Claude Code itself works: how skills are written and followed, which model and effort level a piece of work gets, where answers about a library come from, which folders it is not allowed to change. Every plugin says what its claims rest on — published research, vendor documentation, reading the primary source live, or, where there is nothing more than that, the author's own account of the problem.
 
 ## Install
 
@@ -13,6 +13,7 @@ claude plugin marketplace add PsychQuant/claude-code-logos
 claude plugin install skill-best-practices@claude-code-logos
 claude plugin install model-effort@claude-code-logos
 claude plugin install livedocs@claude-code-logos
+claude plugin install archive-first@claude-code-logos
 ```
 
 If you already installed `livedocs@livedocs-marketplace`, remove that marketplace first (`claude plugin marketplace remove livedocs-marketplace`, which also uninstalls its plugin), so that two copies of the plugin are not enabled together.
@@ -32,6 +33,7 @@ Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-pr
 | `skill-best-practices` | Eight evidence-based practices for writing Claude Code skills, as an on-demand skill, plus hooks that deliver the rules while Claude works: session-start rules (read search results before concluding; ask the user only when the answer changes the next step, while still confirming irreversible actions) and a reminder when search output is truncated | Published research (see [Research Foundations](#research-foundations)) | this repository |
 | `model-effort` | An on-demand skill for choosing the Claude model and effort level: the session's `/model` and `/effort`, subagents, Workflow `agent()` calls, skill frontmatter, and Claude API scripts. Claude Code defaults and API defaults are kept apart, and settings that fail silently are named (a top-level `effortLevel` that newer models ignore, subagents that don't inherit the session's level) | Claude Code and Claude API documentation and Anthropic's own benchmarks, each recommendation is tagged with its source and the skill states the date its facts were checked; a stale date is a reason to re-check | this repository |
 | `livedocs` | An MCP server and a look-up skill that answer questions about a library, SDK or CLI from its primary source instead of from training data or a pre-built index. macOS only; the plugin's wrapper downloads an executable, the MCP server, from the GitHub Releases of `PsychQuant/livedocs` to `~/bin` and runs it | The library's own primary source, read at the time of the question (llms.txt, package registry, repository, OpenAPI/GraphQL, CLI introspection) | [`PsychQuant/livedocs`](https://github.com/PsychQuant/livedocs), included here as a git submodule at `plugins/livedocs`; this repository records the commit that is installed |
+| `archive-first` | PreToolUse hooks that refuse a Bash `rm`, `rmdir` or `unlink` when the command text names a path under `archive/` or `archived/`, and refuse Write and Edit on files under those directories; commands to copy a folder into `archived/` with a timestamp before reorganising it, and to turn the protection off and on. The hooks need `jq` and a POSIX shell. They match the text of the command, so a deletion that reaches the directory another way (a variable, `mv`, `find -delete`) is not stopped, and a harmless command whose text contains both a deleting command and such a path is refused | The author's account of losing data to a coding agent and the strategy that followed from it ([Archive-First Defense](https://che-cheng.vercel.app/blog/vibe-coding-data-loss)); no published research, and no measurement of how often the hooks stop a deletion | [`PsychQuant/archive-first`](https://github.com/PsychQuant/archive-first), included here as a git submodule at `plugins/archive-first`; this repository records the commit that is installed |
 
 **`skill-best-practices` changes when the agent asks you.** For work you asked for, in a repository you can write to, it no longer asks first before four routine GitHub records: creating an issue or comment, editing your own issue body or comment, setting a label or milestone or assigning you, and the IDD baseline tag. If the content is private or mentions someone, it still asks. A stricter policy of your own wins, and Claude Code's permission prompts still apply.
 

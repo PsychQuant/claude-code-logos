@@ -385,3 +385,18 @@ def test_livedocs_rows_and_the_phrases_they_lack() -> None:
     assert livedocs_only(row=row("Runs on macOS; downloads documentation from GitHub Releases")) == lacks(
         "macOS only", "downloads an executable"
     )
+
+
+def test_archive_first_comes_in_as_a_submodule_of_its_own_repository() -> None:
+    # Issue #17. The general rules it must meet are in the marketplace-catalogue spec
+    # (relative path, same three lists, Rests on and Lives in, git submodule).
+    entries = [entry for entry in load_marketplace()["plugins"] if entry.get("name") == "archive-first"]
+    assert len(entries) == 1
+    assert entries[0]["source"] == "./plugins/archive-first"
+    # The version is in the plugin's own manifest; a copy here would go stale at its next release.
+    assert "version" not in entries[0]
+    assert submodules(load_gitmodules()).get("plugins/archive-first") == "https://github.com/PsychQuant/archive-first.git"
+    rows = [row for row in table_rows(load_readme()) if row_name(row) == "archive-first"]
+    assert len(rows) == 1
+    assert "git submodule" in rows[0]["Lives in"]
+    assert "archive-first@claude-code-logos" in install_lines(load_readme())
