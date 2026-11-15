@@ -6,9 +6,10 @@ strings. The tests feed it the real files (no problem expected) and small
 synthetic inputs (named problems expected), so each requirement of the spec has
 a test that can fail.
 
-Every test here needs the `plugins/livedocs` submodule checked out, because the
-synthetic cases also point at its plugin directory. Without it each test fails
-with one message that names the command: `git submodule update --init`.
+Nine of the tests need the `plugins/livedocs` submodule checked out, because
+their inputs point at its plugin directory. Without it each of those stops with
+one message that names the command: `git submodule update --init`. The other
+five use only temporary directories or plain text and run either way.
 """
 from __future__ import annotations
 
@@ -30,7 +31,7 @@ UNREADABLE_ROW = "a row whose first cell is not a plugin name in backticks"
 INIT_HINT = "the submodule is not checked out: run git submodule update --init"
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def submodule_checked_out() -> None:
     if not (ROOT / LIVEDOCS_SOURCE / ".claude-plugin" / "plugin.json").is_file():
         pytest.fail(f"plugins/livedocs: {INIT_HINT}", pytrace=False)
@@ -273,15 +274,22 @@ def entry_named(marketplace: dict[str, Any], name: str) -> dict[str, Any]:
 # --- the real files ---------------------------------------------------------
 
 
+def git(*args: str) -> str:
+    return subprocess.run(["git", *args], capture_output=True, text=True, check=True).stdout
+
+
 def real_tags() -> dict[str, list[str]]:
-    """Tags at the checked-out commit of each submodule, asked from git."""
+    """Tags at the commit this repository records for each submodule.
+
+    The recorded commit is the gitlink in the index (what the next commit will
+    hold), not the submodule's working-tree HEAD: the two differ when someone
+    checks out a tag in the submodule and forgets `git add`, or the reverse.
+    """
     found = {}
     for path in submodules(load_gitmodules()):
-        out = subprocess.run(
-            ["git", "-C", str(ROOT / path), "tag", "--points-at", "HEAD"],
-            capture_output=True, text=True, check=True,
-        ).stdout
-        found[path] = out.split()
+        entry = git("-C", str(ROOT), "ls-files", "-s", "--", path).split()
+        recorded = entry[1] if len(entry) >= 2 and entry[0] == "160000" else ""
+        found[path] = git("-C", str(ROOT / path), "tag", "--points-at", recorded).split() if recorded else []
     return found
 
 
@@ -290,6 +298,7 @@ def real_metadata() -> dict[str, str]:
     return {str(f.relative_to(ROOT)): f.read_text(encoding="utf-8") for f in files}
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_real_files_have_no_problem() -> None:
     marketplace, readme, gitmodules = real()
     metadata = real_metadata()
@@ -306,6 +315,7 @@ def test_empty_catalogue_is_a_problem() -> None:
 # --- one test per spec Example ----------------------------------------------
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_two_entries_named_model_effort() -> None:
     # spec-example: marketplace-catalogue / two entries named model-effort
     marketplace, readme, gitmodules = real()
@@ -342,6 +352,7 @@ def test_sources_that_are_not_strings() -> None:
     assert source_problems({"name": "x"}, ROOT) == ["x: source is not a relative path string"]
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_submodule_plugins_and_their_outcomes() -> None:
     # spec-example: marketplace-catalogue / submodule plugins and their outcomes
     no_phrase = ROW_OK.replace(", a git submodule", "")
@@ -360,8 +371,13 @@ def test_a_submodule_that_is_not_checked_out(tmp_path: Path) -> None:
     )
     assert len(problems) == 1
     assert "no manifest" in problems[0] and "git submodule update --init" in problems[0]
+    # The same message through the whole check, which is what passes .gitmodules on.
+    marketplace = {"plugins": [{"name": "livedocs", "source": LIVEDOCS_SOURCE}]}
+    readme = readme_with([ROW_OK], ["livedocs@claude-code-logos"])
+    assert problems[0] in catalogue_problems(marketplace, readme, tmp_path, GITMODULES_OK)
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_tags_at_the_checked_out_commit() -> None:
     # spec-example: marketplace-catalogue / tags at the checked-out commit
     assert pin_problems("plugins/livedocs", ["v0.9.0"]) == []
@@ -379,8 +395,15 @@ def test_metadata_text_and_its_outcome() -> None:
     assert metadata_problems("a/.openspec.yaml", "created_by: A Person <person@example.invalid>\n") == [
         "a/.openspec.yaml: holds an email address"
     ]
+    # And through the whole check.
+    marketplace = {"plugins": [{"name": "livedocs", "source": LIVEDOCS_SOURCE}]}
+    readme = readme_with([ROW_OK], ["livedocs@claude-code-logos"])
+    bad = {"a/.openspec.yaml": "archived_by: A Person <person@example.invalid>\n"}
+    found = catalogue_problems(marketplace, readme, ROOT, GITMODULES_OK, metadata=bad)
+    assert "a/.openspec.yaml: holds an email address" in found
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_named_plugins_and_their_outcomes() -> None:
     # spec-example: marketplace-catalogue / named plugins and their outcomes
     marketplace, readme, gitmodules = real()
@@ -399,6 +422,7 @@ def test_named_plugins_and_their_outcomes() -> None:
     assert "claude-hot-limit: is listed" in catalogue_problems(extra, readme, ROOT, gitmodules)
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_names_missing_from_one_of_the_three_lists() -> None:
     # spec-example: marketplace-catalogue / names missing from one of the three lists
     marketplace, readme, gitmodules = real()
@@ -419,6 +443,7 @@ def test_names_missing_from_one_of_the_three_lists() -> None:
     ]
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_install_command_forms() -> None:
     # spec-example: marketplace-catalogue / install command forms
     assert livedocs_only(install="livedocs@claude-code-logos") == []
@@ -434,6 +459,7 @@ def test_install_command_forms() -> None:
         ], rest
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_table_rows_and_their_outcomes() -> None:
     # spec-example: marketplace-catalogue / table rows and their outcomes
     text = "An MCP server. macOS only; downloads an executable from GitHub Releases"
@@ -455,6 +481,7 @@ def test_table_rows_and_their_outcomes() -> None:
     assert catalogue_problems(marketplace, unquoted, ROOT, GITMODULES_OK) == [UNREADABLE_ROW]
 
 
+@pytest.mark.usefixtures("submodule_checked_out")
 def test_livedocs_rows_and_the_phrases_they_lack() -> None:
     # spec-example: marketplace-catalogue / livedocs rows and the phrases they lack
     def row(text: str) -> str:
