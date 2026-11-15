@@ -6,23 +6,34 @@ strings. The tests feed it the real files (no problem expected) and small
 synthetic inputs (named problems expected), so each requirement of the spec has
 a test that can fail.
 
-The real-files test needs the `plugins/livedocs` submodule checked out:
-`git submodule update --init`.
+Every test here needs the `plugins/livedocs` submodule checked out, because the
+synthetic cases also point at its plugin directory. Without it each test fails
+with one message that names the command: `git submodule update --init`.
 """
 from __future__ import annotations
 
 import copy
 import json
 import re
+import subprocess
 from collections import Counter
 from pathlib import Path
 from typing import Any
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 MARKETPLACE_NAME = "claude-code-logos"
 LIVEDOCS_SOURCE = "./plugins/livedocs/plugins/livedocs"
 LIVEDOCS_PHRASES = ("macOS only", "downloads an executable", "GitHub Releases")
 UNREADABLE_ROW = "a row whose first cell is not a plugin name in backticks"
+INIT_HINT = "the submodule is not checked out: run git submodule update --init"
+
+
+@pytest.fixture(autouse=True)
+def submodule_checked_out() -> None:
+    if not (ROOT / LIVEDOCS_SOURCE / ".claude-plugin" / "plugin.json").is_file():
+        pytest.fail(f"plugins/livedocs: {INIT_HINT}", pytrace=False)
 
 
 def load_marketplace() -> dict[str, Any]:
@@ -100,7 +111,7 @@ def submodules(gitmodules: str) -> dict[str, str]:
     return found
 
 
-def source_problems(entry: dict[str, Any], root: Path) -> list[str]:
+def source_problems(entry: dict[str, Any], root: Path, modules: dict[str, str] | None = None) -> list[str]:
     name, source = entry.get("name"), entry.get("source")
     if not isinstance(source, str):
         return [f"{name}: source is not a relative path string"]
@@ -111,6 +122,8 @@ def source_problems(entry: dict[str, Any], root: Path) -> list[str]:
         return [f"{name}: source is outside the repository"]
     manifest = target / ".claude-plugin" / "plugin.json"
     if not manifest.is_file():
+        if submodule_of(source, modules or {}) is not None:
+            return [f"{name}: no manifest at {source}; {INIT_HINT}"]
         return [f"{name}: no manifest at {source}"]
     try:
         data = json.loads(manifest.read_text(encoding="utf-8"))
@@ -132,17 +145,34 @@ def submodule_of(source: str, modules: dict[str, str]) -> str | None:
     return None
 
 
+def pin_problems(path: str, tags: list[str]) -> list[str]:
+    """`tags` are the tags of the submodule's repository that point at the recorded commit."""
+    return [] if tags else [f"{path}: is not at a tagged commit"]
+
+
+def metadata_problems(name: str, text: str) -> list[str]:
+    return [f"{name}: holds an email address"] if "@" in text else []
+
+
 def catalogue_problems(
-    marketplace: dict[str, Any], readme: str, root: Path = ROOT, gitmodules: str = ""
+    marketplace: dict[str, Any],
+    readme: str,
+    root: Path = ROOT,
+    gitmodules: str = "",
+    tags: dict[str, list[str]] | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> list[str]:
+    """`tags` maps a submodule path to the tags at its recorded commit; `metadata`
+    maps an .openspec.yaml path to its text. Both are checked only when given."""
     problems: list[str] = []
     entries = marketplace.get("plugins") or []
     names = [entry.get("name") for entry in entries]
     for name, count in Counter(names).items():
         if count > 1:
             problems.append(f"{name}: listed {count} times")
+    modules = submodules(gitmodules)
     for entry in entries:
-        problems += source_problems(entry, root)
+        problems += source_problems(entry, root, modules)
 
     # Decisions about named plugins (closed list, issue #18).
     livedocs = [entry for entry in entries if entry.get("name") == "livedocs"]
@@ -185,7 +215,7 @@ def catalogue_problems(
     def row_text(plugin: str) -> str:
         return " ".join(" ".join(row.values()) for row in rows if row_name(row) == plugin)
 
-    modules = submodules(gitmodules)
+    pinned: set[str] = set()
     for entry in entries:
         source = entry.get("source")
         if not isinstance(source, str):
@@ -193,6 +223,9 @@ def catalogue_problems(
         module = submodule_of(source, modules)
         if module is None:
             continue
+        if tags is not None and module not in pinned:
+            pinned.add(module)
+            problems += pin_problems(module, tags.get(module, []))
         if not modules[module].startswith("https://"):
             problems.append(f"{entry.get('name')}: submodule url is not https")
         # A plugin with no row is already reported as missing from the table.
@@ -204,6 +237,8 @@ def catalogue_problems(
         for phrase in LIVEDOCS_PHRASES:
             if phrase not in text:
                 problems.append(f"livedocs: README row lacks '{phrase}'")
+    for name, text in sorted((metadata or {}).items()):
+        problems += metadata_problems(name, text)
     return problems
 
 
@@ -238,9 +273,28 @@ def entry_named(marketplace: dict[str, Any], name: str) -> dict[str, Any]:
 # --- the real files ---------------------------------------------------------
 
 
+def real_tags() -> dict[str, list[str]]:
+    """Tags at the checked-out commit of each submodule, asked from git."""
+    found = {}
+    for path in submodules(load_gitmodules()):
+        out = subprocess.run(
+            ["git", "-C", str(ROOT / path), "tag", "--points-at", "HEAD"],
+            capture_output=True, text=True, check=True,
+        ).stdout
+        found[path] = out.split()
+    return found
+
+
+def real_metadata() -> dict[str, str]:
+    files = sorted((ROOT / "docs" / "spectra").rglob(".openspec.yaml"))
+    return {str(f.relative_to(ROOT)): f.read_text(encoding="utf-8") for f in files}
+
+
 def test_real_files_have_no_problem() -> None:
     marketplace, readme, gitmodules = real()
-    assert catalogue_problems(marketplace, readme, ROOT, gitmodules) == []
+    metadata = real_metadata()
+    assert metadata, "no .openspec.yaml found under docs/spectra"
+    assert catalogue_problems(marketplace, readme, ROOT, gitmodules, real_tags(), metadata) == []
 
 
 def test_empty_catalogue_is_a_problem() -> None:
@@ -296,6 +350,35 @@ def test_submodule_plugins_and_their_outcomes() -> None:
     assert livedocs_only(gitmodules=ssh) == ["livedocs: submodule url is not https"]
     assert livedocs_only(row=no_phrase) == ["livedocs: README row does not say git submodule"]
     assert livedocs_only(row=no_phrase, gitmodules="") == []
+
+
+def test_a_submodule_that_is_not_checked_out(tmp_path: Path) -> None:
+    # spec-example: marketplace-catalogue / a submodule that is not checked out
+    (tmp_path / "plugins" / "livedocs").mkdir(parents=True)
+    problems = source_problems(
+        {"name": "livedocs", "source": LIVEDOCS_SOURCE}, tmp_path, submodules(GITMODULES_OK)
+    )
+    assert len(problems) == 1
+    assert "no manifest" in problems[0] and "git submodule update --init" in problems[0]
+
+
+def test_tags_at_the_checked_out_commit() -> None:
+    # spec-example: marketplace-catalogue / tags at the checked-out commit
+    assert pin_problems("plugins/livedocs", ["v0.9.0"]) == []
+    assert pin_problems("plugins/livedocs", ["v0.9.0", "latest"]) == []
+    assert pin_problems("plugins/livedocs", []) == ["plugins/livedocs: is not at a tagged commit"]
+    marketplace, readme, gitmodules = real()
+    assert catalogue_problems(marketplace, readme, ROOT, gitmodules, {"plugins/livedocs": []}) == [
+        "plugins/livedocs: is not at a tagged commit"
+    ]
+
+
+def test_metadata_text_and_its_outcome() -> None:
+    # spec-example: marketplace-catalogue / metadata text and its outcome
+    assert metadata_problems("a/.openspec.yaml", "created_by: A Person\n") == []
+    assert metadata_problems("a/.openspec.yaml", "created_by: A Person <person@example.invalid>\n") == [
+        "a/.openspec.yaml: holds an email address"
+    ]
 
 
 def test_named_plugins_and_their_outcomes() -> None:
