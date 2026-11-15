@@ -40,7 +40,7 @@ claude-code-logos/
 ├── plugins/                    ← 公開 plugin（在 marketplace.json 裡）
 │   ├── skill-best-practices/   ← 全部 8 個 practice，日常使用（skill ＋ hooks）
 │   ├── model-effort/           ← 選 model 與 effort（只有 skill；依據是官方文檔與 Anthropic benchmark，事實有日期，要定期重查，#11）
-│   └── livedocs/               ← git submodule：整個 PsychQuant/livedocs repo；plugin 在它裡面的 plugins/livedocs/（#18）
+│   └── livedocs/               ← git submodule：整個 PsychQuantAgent/livedocs repo；plugin 在它裡面的 plugins/livedocs/（#18）
 ├── lab/                        ← 實驗用 plugin（不在 marketplace.json 裡）
 │   ├── checklist-visibility/   ← 介入 1：TaskCreate 清單
 │   ├── interruption-cost/      ← 介入 8：只在答案會改變下一步時提問（SessionStart hook）
@@ -56,7 +56,7 @@ claude-code-logos/
 | 目錄 | 在 marketplace.json | 安裝方式 | 用途 |
 |------|---------------------|---------|------|
 | `plugins/` | 是 | `claude plugin install skill-best-practices@claude-code-logos`、`claude plugin install model-effort@claude-code-logos` | 一般使用者。`skill-best-practices` 是全部 practice 一起裝；`model-effort` 是獨立的 skill，不屬於八個 practice |
-| `plugins/` 底下的 submodule | 是 | `claude plugin install livedocs@claude-code-logos` | `plugins/livedocs` 是指向 `PsychQuant/livedocs` 的 git submodule，這個 repo 只記錄它停在哪個 commit。plugin 外殼、MCP 原始碼與 release 都在那個 repo；條目的 `source` 是 `./plugins/livedocs/plugins/livedocs` |
+| `plugins/` 底下的 submodule | 是 | `claude plugin install livedocs@claude-code-logos` | `plugins/livedocs` 是指向 `PsychQuantAgent/livedocs` 的 git submodule，這個 repo 只記錄它停在哪個 commit。plugin 外殼、MCP 原始碼與 release 都在那個 repo；條目的 `source` 是 `./plugins/livedocs/plugins/livedocs` |
 | `lab/` | 否 | `claude --plugin-dir ./lab/checklist-visibility` | 實驗用，只載入單一介入 |
 
 ## 實驗設計
