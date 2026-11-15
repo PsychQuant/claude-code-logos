@@ -9,7 +9,7 @@ Each plugin here changes how Claude Code itself works: how skills are written an
 ## Install
 
 ```bash
-claude plugin marketplace add PsychQuant/claude-code-logos
+claude plugin marketplace add PsychQuantAgent/claude-code-logos
 claude plugin install skill-best-practices@claude-code-logos
 claude plugin install model-effort@claude-code-logos
 claude plugin install livedocs@claude-code-logos
@@ -17,7 +17,7 @@ claude plugin install livedocs@claude-code-logos
 
 If you already installed `livedocs@livedocs-marketplace`, remove that marketplace first (`claude plugin marketplace remove livedocs-marketplace`, which also uninstalls its plugin), so that two copies of the plugin are not enabled together.
 
-Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-practices --marketplace PsychQuant/claude-code-logos`
+Or, in a session on Claude Code 2.1.275 or later: `/plugin install skill-best-practices --marketplace PsychQuantAgent/claude-code-logos`
 
 ## Principles
 

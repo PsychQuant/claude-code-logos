@@ -95,7 +95,7 @@ claude-code-logos/
 這是 rule #3「concrete examples over abstract rules」的自我應用——抽象的 checklist 原則本身也要有具體 template，否則 skill 作者各寫各的 checklist 格式，擴散效果被稀釋。
 
 更新記錄：
-- `skill-writing.md` 加入 Step 0 template（[commit `e75eae7`](https://github.com/PsychQuant/claude-code-logos/commit/e75eae7)）
+- `skill-writing.md` 加入 Step 0 template（[commit `e75eae7`](https://github.com/PsychQuantAgent/claude-code-logos/commit/e75eae7)）
 
 ## 開發規範
 
