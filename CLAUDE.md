@@ -103,8 +103,10 @@ claude-code-logos/
 
 - 收錄標準：plugin 管的是 Claude Code 本身怎麼跑。研究依據是個別 plugin 的性質，寫在 README 的 Plugins 表「Rests on」欄，不是收錄條件
 - 住在別的 repo 的 plugin：把那個 repo 加成 `plugins/<名稱>` 的 git submodule（`.gitmodules` 的 `url` 寫 `https://`），`marketplace.json` 的 `source` 寫指進 submodule 的相對路徑，README 那一列寫明它是 git submodule。不把檔案複製進來（#18）
-- submodule 的日常：clone 用 `git clone --recurse-submodules`，已經 clone 的跑 `git submodule update --init`（沒有 checkout 時 `tests/test_marketplace.py` 會回報找不到 manifest）。對方發新版之後，在這裡跑 `git submodule update --remote plugins/<名稱>` 再 commit，使用者才裝得到新版
+- submodule 的日常：clone 用 `git clone --recurse-submodules`，已經 clone 的跑 `git submodule update --init`（沒有 checkout 時 `tests/test_marketplace.py` 會回報找不到 manifest）。對方發新版之後，在這裡跑 `git submodule update --remote plugins/<名稱>` 再 commit，使用者才裝得到新版。使用者那邊用 `claude plugin marketplace update claude-code-logos` 再 `claude plugin update <名稱>@claude-code-logos` 拿到（2026-11-15 在本機路徑的 marketplace 上實測：指標從 0.7.0 移到 0.9.0 後，這兩步把安裝的版本換成 0.9.0；指標移動但 `plugin.json` 的版本沒變的情況沒有測）
 - marketplace 怎麼列 plugin、README 要寫什麼，規格在 `docs/spectra/specs/marketplace-catalogue/spec.md`
+- 檔案開頭的 Spectra 區塊是 `spectra init` 產生的流程說明（`spectra update` 會重寫它，不要手改）。它只說明 `/spectra-*` skill 怎麼接續，不改變本檔其他規則，也不讓任何動作可以不問就做：區塊裡「Explicit skill invocation takes precedence」指的是使用者明講要用哪個 skill 時照使用者的，「Apply existing authorization within its unchanged scope」指的是不把先前的同意延伸到新的動作。什麼時候要先問，以使用者自己的設定與 Claude Code 的權限提示為準
+- `/spectra-*` 這 12 個專案層 skill 在 `.claude/skills/`，也是 `spectra init` 產生的，一起進版控，clone 下來就有。Spectra 封存時寫進 `.openspec.yaml` 的 `created_by`／`archived_by` 會帶 git 的 email，commit 前把 email 拿掉、只留名字
 - README 的 Plugins 表與 `marketplace.json` 要列同一組 plugin，`tests/test_marketplace.py` 會檢查（這個 repo 沒有 CI，要手動跑 `pytest`）
 - 每個 lab plugin 只做**一件事**（一個介入），這樣才能隔離變項
 - 介入必須經會載入的元件送達（hook 或 skill）；只放 `rules/` 等於沒有介入（見上方〈實驗設計〉的警語）
