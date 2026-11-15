@@ -6,7 +6,7 @@ strings. The tests feed it the real files (no problem expected) and small
 synthetic inputs (named problems expected), so each requirement of the spec has
 a test that can fail.
 
-The real-files test needs the `plugins/livedocs` submodule checked out:
+The real-files tests need the submodules (`plugins/livedocs`, `plugins/archive-first`) checked out:
 `git submodule update --init`.
 """
 from __future__ import annotations

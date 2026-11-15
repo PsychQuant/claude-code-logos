@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "claude-code-logos",
-  "description": "Plugins that manage how Claude Code runs — how skills are written, which model and effort to use, where documentation answers come from, which folders it must not change. Each states the evidence it rests on.",
+  "description": "Plugins that manage how Claude Code runs — how skills are written, which model and effort to use, where documentation answers come from, which deletions and edits under archive folders are refused. Each states the evidence it rests on.",
   "owner": {
     "name": "Che Cheng",
     "email": "che@psychquant.com"
@@ -39,7 +39,7 @@
     },
     {
       "name": "archive-first",
-      "description": "Hooks that stop Claude Code from deleting, overwriting or editing anything under an archive/ or archived/ directory, and a command that copies a folder there before it is reorganised. The hooks need jq and a POSIX shell",
+      "description": "Hooks that refuse a Bash rm, rmdir or unlink whose command text names a path under archive/ or archived/, and refuse the Write and Edit tools on files under those directories; a command that copies a folder there before it is reorganised. Other ways of changing those files through Bash are not refused. The hooks need jq and allow everything without it",
       "author": {
         "name": "Che Cheng"
       },
