@@ -1,0 +1,3 @@
+[submodule "plugins/livedocs"]
+	path = plugins/livedocs
+	url = https://github.com/PsychQuant/livedocs.git

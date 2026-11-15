@@ -39,14 +39,16 @@ Changes can be parked（暫存）— temporarily moved out of `docs/spectra/chan
 claude-code-logos/
 ├── plugins/                    ← 公開 plugin（在 marketplace.json 裡）
 │   ├── skill-best-practices/   ← 全部 8 個 practice，日常使用（skill ＋ hooks）
-│   └── model-effort/           ← 選 model 與 effort（只有 skill；依據是官方文檔與 Anthropic benchmark，事實有日期，要定期重查，#11）
-├── .claude-plugin/marketplace.json ← 另列住在別的 repo 的 plugin：livedocs（PsychQuant/livedocs 的 plugins/livedocs，#18）
+│   ├── model-effort/           ← 選 model 與 effort（只有 skill；依據是官方文檔與 Anthropic benchmark，事實有日期，要定期重查，#11）
+│   └── livedocs/               ← git submodule：整個 PsychQuant/livedocs repo；plugin 在它裡面的 plugins/livedocs/（#18）
 ├── lab/                        ← 實驗用 plugin（不在 marketplace.json 裡）
 │   ├── checklist-visibility/   ← 介入 1：TaskCreate 清單
 │   ├── interruption-cost/      ← 介入 8：只在答案會改變下一步時提問（SessionStart hook）
 │   ├── separate-phases/        ← 介入 2：機械/創意分離（待建）
 │   └── ...                     ← 其他介入（待建）
-└── docs/                       ← 研究筆記、實驗設計、數據
+├── tests/                      ← repo 層的測試（test_marketplace.py 檢查 marketplace 與 README）
+└── docs/
+    └── spectra/                ← 規格（specs/）與 change（changes/、changes/archive/）
 ```
 
 ## 公開 vs 實驗
@@ -54,7 +56,7 @@ claude-code-logos/
 | 目錄 | 在 marketplace.json | 安裝方式 | 用途 |
 |------|---------------------|---------|------|
 | `plugins/` | 是 | `claude plugin install skill-best-practices@claude-code-logos`、`claude plugin install model-effort@claude-code-logos` | 一般使用者。`skill-best-practices` 是全部 practice 一起裝；`model-effort` 是獨立的 skill，不屬於八個 practice |
-| 別的 repo（`git-subdir` 條目） | 是 | `claude plugin install livedocs@claude-code-logos` | 檔案不在這個 repo。`livedocs` 的 plugin 外殼、MCP 原始碼與 release 都在 `PsychQuant/livedocs`，這裡只有 `marketplace.json` 的一筆條目 |
+| `plugins/` 底下的 submodule | 是 | `claude plugin install livedocs@claude-code-logos` | `plugins/livedocs` 是指向 `PsychQuant/livedocs` 的 git submodule，這個 repo 只記錄它停在哪個 commit。plugin 外殼、MCP 原始碼與 release 都在那個 repo；條目的 `source` 是 `./plugins/livedocs/plugins/livedocs` |
 | `lab/` | 否 | `claude --plugin-dir ./lab/checklist-visibility` | 實驗用，只載入單一介入 |
 
 ## 實驗設計
@@ -98,7 +100,8 @@ claude-code-logos/
 ## 開發規範
 
 - 收錄標準：plugin 管的是 Claude Code 本身怎麼跑。研究依據是個別 plugin 的性質，寫在 README 的 Plugins 表「Rests on」欄，不是收錄條件
-- 住在別的 repo 的 plugin：在 `marketplace.json` 用 `git-subdir` 條目列出，`url` 寫完整的 `https://`（`owner/repo` 簡寫在沒有 GitHub SSH key 的機器上會裝不起來），不寫 `version`（跟著該 plugin 自己的 `plugin.json`），不把檔案複製進來。不 pin `sha` 的寫法只用在維護者相同的 repo，README 那一列要寫明它跟著對方的預設分支；對方的 commit 弄壞安裝時，退路是加 `sha`（#18）
+- 住在別的 repo 的 plugin：把那個 repo 加成 `plugins/<名稱>` 的 git submodule（`.gitmodules` 的 `url` 寫 `https://`），`marketplace.json` 的 `source` 寫指進 submodule 的相對路徑，README 那一列寫明它是 git submodule。不把檔案複製進來（#18）
+- submodule 的日常：clone 用 `git clone --recurse-submodules`，已經 clone 的跑 `git submodule update --init`（沒有 checkout 時 `tests/test_marketplace.py` 會回報找不到 manifest）。對方發新版之後，在這裡跑 `git submodule update --remote plugins/<名稱>` 再 commit，使用者才裝得到新版
 - marketplace 怎麼列 plugin、README 要寫什麼，規格在 `docs/spectra/specs/marketplace-catalogue/spec.md`
 - README 的 Plugins 表與 `marketplace.json` 要列同一組 plugin，`tests/test_marketplace.py` 會檢查（這個 repo 沒有 CI，要手動跑 `pytest`）
 - 每個 lab plugin 只做**一件事**（一個介入），這樣才能隔離變項

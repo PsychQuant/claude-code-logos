@@ -1,0 +1,22 @@
+## 1. Catalogue check
+
+- [x] 1.1 Requirement "A plugin in this repository is listed by a relative path": the check reports the seven rows of the Example in the stated order of checks, and reports a manifest that is not a JSON object without raising. Verified by a test marked `spec-example: marketplace-catalogue / relative sources and their outcomes` that asserts every row; it fails before the change on the two manifest rows.
+- [x] 1.2 Requirement "Every entry's source is a relative path string" replaces "Every entry uses one of the two source forms": an object, a number and a missing source are each reported. Verified by a test marked `spec-example: marketplace-catalogue / sources that are not strings`; it fails before the change because a git-subdir object is accepted.
+- [x] 1.3 Requirement "A plugin from another repository comes in as a git submodule" replaces "A plugin in another repository is listed by git-subdir" and "An unpinned entry is disclosed in the README": the check reads .gitmodules, reports a submodule url that is not https and a README row without the phrase git submodule. Verified by a test marked `spec-example: marketplace-catalogue / submodule plugins and their outcomes` that asserts the four rows.
+- [x] 1.4 Requirement "Decisions about named plugins": the check reports livedocs absent, livedocs with another source, and claude-hot-limit listed. Verified by a test marked `spec-example: marketplace-catalogue / named plugins and their outcomes`; the two unmarked tests it replaces are removed.
+- [x] 1.5 Requirement "The README lists the same plugins as the marketplace": install commands are read from the fenced block of the Install section, each must be exactly name@claude-code-logos, and a name missing from any of the three lists is reported with the list. Verified by tests marked `spec-example: marketplace-catalogue / names missing from one of the three lists` and `spec-example: marketplace-catalogue / install command forms` that assert every row.
+- [x] 1.6 Requirement "The README states what each plugin rests on and where it lives": every data row is checked, a repeated name and a first cell without backticks are reported. Verified by a test marked `spec-example: marketplace-catalogue / table rows and their outcomes` that asserts the four rows.
+- [x] 1.7 Requirement "The README states the platform limit and the executable download of livedocs": the three phrases are required and each missing one is reported. Verified by a test marked `spec-example: marketplace-catalogue / livedocs rows and the phrases they lack` that asserts the three rows.
+- [x] 1.8 Requirement "Plugin names are unique" keeps its test, which no longer depends on the position of an entry in the plugins array. Verified by the test marked `spec-example: marketplace-catalogue / two entries named model-effort`.
+
+## 2. Files
+
+- [x] 2.1 The livedocs entry's source is ./plugins/livedocs/plugins/livedocs and .gitmodules lists plugins/livedocs with an https url, so the real-files test reports no problem. Verified by `python3 -m pytest tests/test_marketplace.py` and `claude plugin validate .`. [after: 1.8]
+- [x] 2.2 The README livedocs row says the plugin is a git submodule at the commit this repository records, runs on macOS only, and downloads an executable from the GitHub Releases of PsychQuant/livedocs; the sentence about the default branch is gone. Verified by the real-files test and by reading the row against plugins/livedocs/plugins/livedocs/bin/livedocs-wrapper.sh. [after: 1.8]
+- [x] 2.3 CLAUDE.md describes the submodule form: how to clone with submodules, how to move the pointer after a livedocs release, and that the tests need the submodule checked out; the structure tree lists tests and docs/spectra; the sentence about SSH keys is removed with the git-subdir rule. Verified by content review of the 專案結構 and 開發規範 sections. [after: 2.1]
+
+## 3. Install test and records
+
+- [x] 3.1 livedocs@claude-code-logos installs from this branch in an isolated config directory: version 0.9.0 is shown, the MCP server answers initialize and tools/list. Verified by running the install and the probe. [after: 2.1]
+- [x] 3.2 The main spec's trace blocks name the files that implement each requirement, not a local workspace file. Verified by reading docs/spectra/specs/marketplace-catalogue/spec.md after the archive step. [after: 3.1]
+- [x] 3.3 The whole suite passes. Verified by `python3 -m pytest -q` showing no failure. [after: 2.3]
