@@ -8,7 +8,8 @@ a test that can fail.
 
 Nine of the tests need the `plugins/livedocs` submodule checked out, because
 their inputs point at its plugin directory. Without it each of those stops with
-one message that names the command: `git submodule update --init`. The other
+one message that names the command: `git submodule update --init`. The archive-first test needs
+the `plugins/archive-first` submodule as well. The other
 five use only temporary directories or plain text and run either way.
 """
 from __future__ import annotations
@@ -384,7 +385,9 @@ def test_tags_at_the_checked_out_commit() -> None:
     assert pin_problems("plugins/livedocs", ["v0.9.0", "latest"]) == []
     assert pin_problems("plugins/livedocs", []) == ["plugins/livedocs: is not at a tagged commit"]
     marketplace, readme, gitmodules = real()
-    assert catalogue_problems(marketplace, readme, ROOT, gitmodules, {"plugins/livedocs": []}) == [
+    assert catalogue_problems(
+        marketplace, readme, ROOT, gitmodules, {"plugins/livedocs": [], "plugins/archive-first": ["v2.2.0"]}
+    ) == [
         "plugins/livedocs: is not at a tagged commit"
     ]
 
@@ -495,3 +498,18 @@ def test_livedocs_rows_and_the_phrases_they_lack() -> None:
     assert livedocs_only(row=row("Runs on macOS; downloads documentation from GitHub Releases")) == lacks(
         "macOS only", "downloads an executable"
     )
+
+
+def test_archive_first_comes_in_as_a_submodule_of_its_own_repository() -> None:
+    # Issue #17. The general rules it must meet are in the marketplace-catalogue spec
+    # (relative path, same three lists, Rests on and Lives in, git submodule).
+    entries = [entry for entry in load_marketplace()["plugins"] if entry.get("name") == "archive-first"]
+    assert len(entries) == 1
+    assert entries[0]["source"] == "./plugins/archive-first"
+    # The version is in the plugin's own manifest; a copy here would go stale at its next release.
+    assert "version" not in entries[0]
+    assert submodules(load_gitmodules()).get("plugins/archive-first") == "https://github.com/PsychQuant/archive-first.git"
+    rows = [row for row in table_rows(load_readme()) if row_name(row) == "archive-first"]
+    assert len(rows) == 1
+    assert "git submodule" in rows[0]["Lives in"]
+    assert "archive-first@claude-code-logos" in install_lines(load_readme())
