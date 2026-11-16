@@ -40,7 +40,7 @@ claude-code-logos/
 ├── plugins/                    ← 公開 plugin（在 marketplace.json 裡）
 │   ├── skill-best-practices/   ← 全部 8 個 practice，日常使用（skill ＋ hooks）
 │   ├── model-effort/           ← 選 model 與 effort（只有 skill；依據是官方文檔與 Anthropic benchmark，事實有日期，要定期重查，#11）
-│   ├── livedocs/               ← git submodule：整個 PsychQuant/livedocs repo；plugin 在它裡面的 plugins/livedocs/（#18）
+│   ├── livedocs/               ← git submodule：整個 PsychQuantAgent/livedocs repo；plugin 在它裡面的 plugins/livedocs/（#18）
 │   └── archive-first/          ← git submodule：整個 PsychQuant/archive-first repo，repo 根目錄就是 plugin（#17）
 ├── lab/                        ← 實驗用 plugin（不在 marketplace.json 裡）
 │   ├── checklist-visibility/   ← 介入 1：TaskCreate 清單
@@ -57,7 +57,7 @@ claude-code-logos/
 | 目錄 | 在 marketplace.json | 安裝方式 | 用途 |
 |------|---------------------|---------|------|
 | `plugins/` | 是 | `claude plugin install skill-best-practices@claude-code-logos`、`claude plugin install model-effort@claude-code-logos` | 一般使用者。`skill-best-practices` 是全部 practice 一起裝；`model-effort` 是獨立的 skill，不屬於八個 practice |
-| `plugins/` 底下的 submodule | 是 | `claude plugin install livedocs@claude-code-logos` | `plugins/livedocs` 是指向 `PsychQuant/livedocs` 的 git submodule，這個 repo 只記錄它停在哪個 commit。plugin 外殼、MCP 原始碼與 release 都在那個 repo；條目的 `source` 是 `./plugins/livedocs/plugins/livedocs` |
+| `plugins/` 底下的 submodule | 是 | `claude plugin install livedocs@claude-code-logos` | `plugins/livedocs` 是指向 `PsychQuantAgent/livedocs` 的 git submodule，這個 repo 只記錄它停在哪個 commit。plugin 外殼、MCP 原始碼與 release 都在那個 repo；條目的 `source` 是 `./plugins/livedocs/plugins/livedocs` |
 | 同上 | 是 | `claude plugin install archive-first@claude-code-logos` | `plugins/archive-first` 是指向 `PsychQuant/archive-first` 的 git submodule，那個 repo 的根目錄就是 plugin，所以條目的 `source` 是 `./plugins/archive-first`。依據是作者自己的事故說明，沒有已發表的研究（#17） |
 | `lab/` | 否 | `claude --plugin-dir ./lab/checklist-visibility` | 實驗用，只載入單一介入 |
 
@@ -97,16 +97,18 @@ claude-code-logos/
 這是 rule #3「concrete examples over abstract rules」的自我應用——抽象的 checklist 原則本身也要有具體 template，否則 skill 作者各寫各的 checklist 格式，擴散效果被稀釋。
 
 更新記錄：
-- `skill-writing.md` 加入 Step 0 template（[commit `e75eae7`](https://github.com/PsychQuant/claude-code-logos/commit/e75eae7)）
+- `skill-writing.md` 加入 Step 0 template（[commit `e75eae7`](https://github.com/PsychQuantAgent/claude-code-logos/commit/e75eae7)）
 
 ## 開發規範
 
 - 收錄標準：plugin 管的是 Claude Code 本身怎麼跑。研究依據是個別 plugin 的性質，寫在 README 的 Plugins 表「Rests on」欄，不是收錄條件
 - 住在別的 repo 的 plugin：把那個 repo 加成 `plugins/<名稱>` 的 git submodule（`.gitmodules` 的 `url` 寫 `https://`），`marketplace.json` 的 `source` 寫指進 submodule 的相對路徑，README 那一列寫明它是 git submodule。不把檔案複製進來（#18）
-- submodule 的日常：clone 用 `git clone --recurse-submodules`，已經 clone 的跑 `git submodule update --init`（沒有 checkout 時 `tests/test_marketplace.py` 會回報找不到 manifest）。對方發新版之後，在這裡跑 `git submodule update --remote plugins/<名稱>` 再 commit，使用者才裝得到新版。使用者那邊用 `claude plugin marketplace update claude-code-logos` 再 `claude plugin update <名稱>@claude-code-logos` 拿到（2026-11-15 在本機路徑的 marketplace 上實測：指標從 0.7.0 移到 0.9.0 後，這兩步把安裝的版本換成 0.9.0；指標移動但 `plugin.json` 的版本沒變的情況沒有測）
+- submodule 的日常：clone 用 `git clone --recurse-submodules`，已經 clone 的跑 `git submodule update --init`（沒有 checkout 時，`tests/test_marketplace.py` 裡需要它的 9 個測試會停在同一句訊息：`plugins/livedocs: the submodule is not checked out: run git submodule update --init`）。submodule 一律釘在對方的 release tag（`tests/test_marketplace.py` 會讀這個 repo 記錄的 gitlink，檢查那個 commit 在 submodule 裡有 tag），不釘預設分支頂端：對方發新版之後，在這裡跑 `git -C plugins/<名稱> fetch --tags`、`git -C plugins/<名稱> checkout <tag>`、`git add plugins/<名稱>` 再 commit，使用者才裝得到新版。不要用 `git submodule update --remote`，它會落在預設分支頂端，skill 可能比已發布的執行檔新（#18 第 3 輪）。使用者那邊用 `claude plugin marketplace update claude-code-logos` 再 `claude plugin update <名稱>@claude-code-logos` 拿到（2026-11-15 在本機路徑的 marketplace 上實測：指標從 0.7.0 移到 0.9.0 後，這兩步把安裝的版本換成 0.9.0；指標移動但 `plugin.json` 的版本沒變的情況沒有測）
 - marketplace 怎麼列 plugin、README 要寫什麼，規格在 `docs/spectra/specs/marketplace-catalogue/spec.md`
-- 檔案開頭的 Spectra 區塊是 `spectra init` 產生的流程說明（`spectra update` 會重寫它，不要手改）。它只說明 `/spectra-*` skill 怎麼接續，不改變本檔其他規則，也不讓任何動作可以不問就做：區塊裡「Explicit skill invocation takes precedence」指的是使用者明講要用哪個 skill 時照使用者的，「Apply existing authorization within its unchanged scope」指的是不把先前的同意延伸到新的動作。什麼時候要先問，以使用者自己的設定與 Claude Code 的權限提示為準
-- `/spectra-*` 這 12 個專案層 skill 在 `.claude/skills/`，也是 `spectra init` 產生的，一起進版控，clone 下來就有。Spectra 封存時寫進 `.openspec.yaml` 的 `created_by`／`archived_by` 會帶 git 的 email，commit 前把 email 拿掉、只留名字
+- 檔案開頭的 Spectra 區塊是 `spectra init` 產生的流程說明（`spectra update` 會重寫它，不要手改）。它只說明 `/spectra-*` skill 怎麼接續，不改變本檔其他規則，區塊本身也不讓任何動作可以不問就做：區塊裡「Explicit skill invocation takes precedence」指的是使用者明講要用哪個 skill 時照使用者的，「Apply existing authorization within its unchanged scope」指的是不把先前的同意延伸到新的動作。什麼時候要先問，以使用者自己的設定與 Claude Code 的權限提示為準
+- `/spectra-*` skill 自己有幾個步驟不會另外問，用之前要知道（2026-11-15 讀到的，Spectra 升級後要重看）：`spectra-propose` 結束時一律 `spectra park` 那個 change；`spectra-ingest` 會用 `--force` 覆寫既有 artifact，並可能在既有授權下接著跑 `/spectra-apply`；`spectra-archive` 不因為還沒 verify 而擋下封存；幾個 skill 執行時會向本機的 `spectra` CLI 取進一步的指示，那些文字不在這個 repo 裡
+- 規格沒有涵蓋的（刻意不寫成 requirement）：收錄標準（#22，沒辦法機械檢查）、`conftest.py` 把 submodule 自己的測試排除在根目錄的 `pytest` 之外、`.gitignore`、上面的 submodule 日常與「不把檔案複製進來」、README 寫給舊 `livedocs-marketplace` 使用者的那句移除說明
+- `/spectra-*` 這 12 個專案層 skill 在 `.claude/skills/`，也是 `spectra init` 產生的，一起進版控，clone 下來就有。Spectra 封存時寫進 `.openspec.yaml` 的 `created_by`／`archived_by` 會帶 git 的 email，commit 前把 email 拿掉、只留名字（`tests/test_marketplace.py` 會檢查）
 - README 的 Plugins 表與 `marketplace.json` 要列同一組 plugin，`tests/test_marketplace.py` 會檢查（這個 repo 沒有 CI，要手動跑 `pytest`）
 - 每個 lab plugin 只做**一件事**（一個介入），這樣才能隔離變項
 - 介入必須經會載入的元件送達（hook 或 skill）；只放 `rules/` 等於沒有介入（見上方〈實驗設計〉的警語）

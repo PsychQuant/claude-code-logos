@@ -1,6 +1,6 @@
 [submodule "plugins/livedocs"]
 	path = plugins/livedocs
-	url = https://github.com/PsychQuant/livedocs.git
+	url = https://github.com/PsychQuantAgent/livedocs.git
 [submodule "plugins/archive-first"]
 	path = plugins/archive-first
 	url = https://github.com/PsychQuant/archive-first.git

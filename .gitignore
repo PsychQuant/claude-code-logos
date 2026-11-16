@@ -6,6 +6,9 @@ __pycache__/
 # Editor workspace files are per machine (#23)
 *.code-workspace
 
+# Written by `spectra init`; a per-machine Claude Code setting, not a project decision (#23)
+.claude/settings.json
+
 # Spectra app data
 .spectra/
 docs/spectra/.vector-search.db*

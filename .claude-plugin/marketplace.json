@@ -6,7 +6,7 @@
     "name": "Che Cheng",
     "email": "che@psychquant.com"
   },
-  "homepage": "https://github.com/PsychQuant/claude-code-logos",
+  "homepage": "https://github.com/PsychQuantAgent/claude-code-logos",
   "plugins": [
     {
       "name": "skill-best-practices",
